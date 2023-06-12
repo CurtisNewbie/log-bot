@@ -1,0 +1,36 @@
+mode.production: true
+
+app.name: "log-bot"
+
+mysql:
+  enabled: true
+  user: "${mysqlusername}"
+  password: "${mysqlpassword}"
+  database: "log_bot"
+  host: "${mysqladdr}"
+  port: 3306
+
+server:
+  host: "0.0.0.0"
+  port: 8087
+  gracefulShutdownTimeSec: 5
+  perf.enabled: false
+
+consul:
+  enabled: true
+  consulAddress: consul:8500
+  healthCheckUrl: /health
+  healthCheckInterval: 120s
+  healthCheckTimeout: 120s
+  healthCheckFailedDeregisterAfter: 5s
+
+tracing.propagation.keys:
+  - id
+  - userno
+  - username
+  - role
+  - roleno
+
+logging.rolling.file: "/usr/src/logs/${app.name}.log"
+
+goauth.report.enabled: true

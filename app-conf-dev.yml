@@ -1,0 +1,30 @@
+mode.production: false
+app.name: 'log-bot'
+
+server:
+  host: "0.0.0.0"
+  port: 8087
+  gracefulShutdownTimeSec: 5
+  perf.enabled: false
+
+mysql:
+  enabled: true
+  user: root
+  database: log_bot
+  host: localhost
+  port: 3306
+
+rabbitmq:
+  enabled: false
+  host: localhost
+  port: 5672
+  username: guest
+  password: guest
+  vhost: "/"
+
+tracing.propagation.keys:
+  - id
+  - userno
+  - username
+  - role
+  - services
