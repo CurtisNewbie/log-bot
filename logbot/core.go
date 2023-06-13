@@ -2,15 +2,19 @@ package logbot
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/gocommon/mysql"
+	red "github.com/curtisnewbie/gocommon/redis"
 	"github.com/curtisnewbie/gocommon/server"
+	"github.com/go-redis/redis"
 )
 
 type LogPos struct {
@@ -33,13 +37,28 @@ func ListAppLogFiles(c common.ExecContext) ([]AppLogFile, error) {
 }
 
 func LastPos(c common.ExecContext, id int64) (int64, error) {
-	// TODO: read from redis
-	return 0, nil
+	cmd := red.GetRedis().Get(fmt.Sprintf("log-bot:pos:id:%v", id))
+	if cmd.Err() != nil {
+		if errors.Is(cmd.Err(), redis.Nil) {
+			return 0, nil
+		}
+		return 0, cmd.Err()
+	}
+
+	n, ea := strconv.Atoi(cmd.Val())
+	if ea != nil {
+		return 0, nil
+	}
+	if n < 0 {
+		n = 0
+	}
+	return int64(n), nil
 }
 
 func recPos(c common.ExecContext, id int64, pos int64) error {
-	// TODO: record on redis
-	return nil
+	posStr := strconv.FormatInt(pos, 10)
+	cmd := red.GetRedis().Set(fmt.Sprintf("log-bot:pos:id:%v", id), posStr, 0)
+	return cmd.Err()
 }
 
 func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
@@ -77,6 +96,7 @@ func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
 			if e != nil {
 				return fmt.Errorf("failed to seek pos, %v", e)
 			}
+			c.Log.Infof("Log file '%v' seek to position %v", appLog.File, pos)
 		}
 	}
 
@@ -159,6 +179,7 @@ func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
 
 		// the file may be truncated or renamed
 		if err == io.EOF {
+			recPos(c, appLog.Id, pos) // record position every 1000 lines
 			accum = 0
 			time.Sleep(2 * time.Second)
 			continue
