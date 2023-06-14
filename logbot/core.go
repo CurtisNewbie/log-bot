@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -17,10 +19,9 @@ import (
 	"github.com/go-redis/redis"
 )
 
-type LogPos struct {
-	File     string
-	Position int64
-}
+var (
+	_logLinePat = regexp.MustCompile(`^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[([\w ]+),([\w ]+)\] ([\w\.]+) +: +(.*)`)
+)
 
 type AppLogFile struct {
 	Id   int64
@@ -36,7 +37,7 @@ func ListAppLogFiles(c common.ExecContext) ([]AppLogFile, error) {
 	return files, e
 }
 
-func LastPos(c common.ExecContext, id int64) (int64, error) {
+func lastPos(c common.ExecContext, id int64) (int64, error) {
 	cmd := red.GetRedis().Get(fmt.Sprintf("log-bot:pos:id:%v", id))
 	if cmd.Err() != nil {
 		if errors.Is(cmd.Err(), redis.Nil) {
@@ -74,7 +75,7 @@ func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
 		defer f.Close() // the log file is opened
 	}
 
-	pos, el := LastPos(c, appLog.Id)
+	pos, el := lastPos(c, appLog.Id)
 	if el != nil {
 		return fmt.Errorf("failed to find last pos, %v", el)
 	}
@@ -155,7 +156,7 @@ func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
 				rd = nil
 				f = nil
 				lastRead = time.Now()
-				c.Log.Info("Closed file '%v' fd", appLog.File)
+				c.Log.Infof("Closed file '%v' fd", appLog.File)
 				continue
 			}
 		}
@@ -163,7 +164,15 @@ func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
 		line, err := rd.ReadString('\n')
 		if err == nil {
 			lineLen := int64(len([]byte(line)))
-			parseLine(c, line, appLog, pos+lineLen)
+			logLine, e := parseLine(c, line, appLog, pos+lineLen)
+			if e == nil {
+				if e := reportLine(c, logLine); e != nil {
+					c.Log.Errorf("Failed to reportLine, logLine: %+v, %v", logLine, e)
+				}
+			} else {
+				c.Log.Errorf("Failed to parse logLine, %v, line: '%v'", e, line)
+			}
+
 			pos += lineLen // move the position
 			lastRead = time.Now()
 			accum += 1
@@ -192,7 +201,47 @@ func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
 	}
 }
 
-func parseLine(c common.ExecContext, line string, appLog AppLogFile, pos int64) {
-	// c.Log.Infof("%s - %s\n", appLog.File, line)
-	c.Log.Infof("%s, pos: %v", appLog.File, pos)
+type logLine struct {
+	Time    time.Time
+	Level   string
+	TraceId string
+	SpanId  string
+	Func    string
+	Message string
+}
+
+func parseLogLine(c common.ExecContext, line string) (logLine, error) {
+	matches := _logLinePat.FindStringSubmatch(line)
+	if matches == nil {
+		return logLine{}, fmt.Errorf("doesn't match pattern")
+	}
+
+	time, ep := time.Parse(`2006-01-02 15:04:05.000`, matches[1])
+	if ep != nil {
+		return logLine{}, fmt.Errorf("time format illegal, %v", ep)
+	}
+	return logLine{
+		Time:    time,
+		Level:   matches[2],
+		TraceId: strings.TrimSpace(matches[3]),
+		SpanId:  strings.TrimSpace(matches[4]),
+		Func:    matches[5],
+		Message: matches[6],
+	}, nil
+}
+
+func parseLine(c common.ExecContext, line string, appLog AppLogFile, pos int64) (logLine, error) {
+	logLine, err := parseLogLine(c, line)
+	c.Log.Infof("id: %v, app: %v, pos: %v", appLog.App, appLog.Id, pos)
+	return logLine, err
+}
+
+func reportLine(c common.ExecContext, line logLine) error {
+	if line.Level != "ERROR" {
+		return nil
+	}
+
+	c.Log.Errorf("Found %+v", line)
+	// TODO
+	return nil
 }
