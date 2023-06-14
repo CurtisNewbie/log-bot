@@ -3,7 +3,7 @@ module github.com/curtisnewbie/log-bot
 go 1.18
 
 require (
-	github.com/curtisnewbie/gocommon v0.0.0-20230612045632-de6709806533
+	github.com/curtisnewbie/gocommon v0.0.0-20230614143135-33113980df3b
 	github.com/go-redis/redis v6.15.9+incompatible
 )
 

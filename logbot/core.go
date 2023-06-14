@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/curtisnewbie/gocommon/common"
-	"github.com/curtisnewbie/gocommon/mysql"
 	red "github.com/curtisnewbie/gocommon/redis"
 	"github.com/curtisnewbie/gocommon/server"
 	"github.com/go-redis/redis"
@@ -23,22 +22,8 @@ var (
 	_logLinePat = regexp.MustCompile(`^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[([\w ]+),([\w ]+)\] ([\w\.]+) +: +(.*)`)
 )
 
-type AppLogFile struct {
-	Id   int64
-	App  string
-	File string
-}
-
-func ListAppLogFiles(c common.ExecContext) ([]AppLogFile, error) {
-	var files []AppLogFile
-	e := mysql.GetConn().
-		Table("app_log_file").
-		Scan(&files).Error
-	return files, e
-}
-
-func lastPos(c common.ExecContext, id int64) (int64, error) {
-	cmd := red.GetRedis().Get(fmt.Sprintf("log-bot:pos:id:%v", id))
+func lastPos(c common.ExecContext, app string, nodeName string) (int64, error) {
+	cmd := red.GetRedis().Get(fmt.Sprintf("log-bot:pos:%v:%v", nodeName, app))
 	if cmd.Err() != nil {
 		if errors.Is(cmd.Err(), redis.Nil) {
 			return 0, nil
@@ -56,14 +41,15 @@ func lastPos(c common.ExecContext, id int64) (int64, error) {
 	return int64(n), nil
 }
 
-func recPos(c common.ExecContext, id int64, pos int64) error {
+func recPos(c common.ExecContext, app string, nodeName string, pos int64) error {
 	posStr := strconv.FormatInt(pos, 10)
-	cmd := red.GetRedis().Set(fmt.Sprintf("log-bot:pos:id:%v", id), posStr, 0)
+	cmd := red.GetRedis().Set(fmt.Sprintf("log-bot:pos:%v:%v", nodeName, app), posStr, 0)
 	return cmd.Err()
 }
 
-func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
-	f, err := os.Open(appLog.File)
+func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
+	c.Log.Infof("Watching log file '%v' for app '%v'", wc.File, wc.App)
+	f, err := os.Open(wc.File)
 
 	if err != nil {
 		if !os.IsNotExist(err) { // is possible that the log file doesn't exist
@@ -75,7 +61,7 @@ func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
 		defer f.Close() // the log file is opened
 	}
 
-	pos, el := lastPos(c, appLog.Id)
+	pos, el := lastPos(c, wc.App, nodeName)
 	if el != nil {
 		return fmt.Errorf("failed to find last pos, %v", el)
 	}
@@ -97,7 +83,7 @@ func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
 			if e != nil {
 				return fmt.Errorf("failed to seek pos, %v", e)
 			}
-			c.Log.Infof("Log file '%v' seek to position %v", appLog.File, pos)
+			c.Log.Infof("Log file '%v' seek to position %v", wc.File, pos)
 		}
 	}
 
@@ -110,17 +96,16 @@ func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
 	lastRead := time.Now()
 	accum := 0 // lines read so far (will be reset when it reaches 1000)
 
-	// TODO: should be querying ElasticSearch for distributed environment, this should work for single node for now
 	for {
 		if rd == nil {
 			time.Sleep(2 * time.Second) // wait for the file to be created
 
-			f, err = os.Open(appLog.File)
+			f, err = os.Open(wc.File)
 			if err != nil {
 				f = nil
 				continue // the file is still not created
 			}
-			c.Log.Infof("Opened %v", appLog.File)
+			c.Log.Infof("Opened %v", wc.File)
 
 			// new file, create reader and set pos = 0
 			rd = bufio.NewReader(f)
@@ -128,7 +113,8 @@ func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
 		}
 
 		// check if the file is still valid
-		if time.Since(lastRead) > 1*time.Minute {
+		if time.Since(lastRead) > 30*time.Second {
+			c.Log.Debug("Checking if the file is still valid, ", wc.File)
 
 			reopenFile := false
 
@@ -151,12 +137,13 @@ func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
 				}
 			}
 
+			lastRead = time.Now()
+
 			if reopenFile {
 				f.Close()
 				rd = nil
 				f = nil
-				lastRead = time.Now()
-				c.Log.Infof("Closed file '%v' fd", appLog.File)
+				c.Log.Infof("Closed file '%v' fd", wc.File)
 				continue
 			}
 		}
@@ -164,7 +151,7 @@ func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
 		line, err := rd.ReadString('\n')
 		if err == nil {
 			lineLen := int64(len([]byte(line)))
-			logLine, e := parseLine(c, line, appLog, pos+lineLen)
+			logLine, e := parseLine(c, line, wc, pos+lineLen)
 			if e == nil {
 				if e := reportLine(c, logLine); e != nil {
 					c.Log.Errorf("Failed to reportLine, logLine: %+v, %v", logLine, e)
@@ -178,7 +165,7 @@ func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
 			accum += 1
 
 			if accum == 1000 {
-				recPos(c, appLog.Id, pos) // record position every 1000 lines
+				recPos(c, wc.App, nodeName, pos) // record position every 1000 lines
 				time.Sleep(500 * time.Millisecond)
 				accum = 0
 			}
@@ -188,14 +175,14 @@ func WatchLogFile(c common.ExecContext, appLog AppLogFile) error {
 
 		// the file may be truncated or renamed
 		if err == io.EOF {
-			recPos(c, appLog.Id, pos) // record position every 1000 lines
+			recPos(c, wc.App, nodeName, pos) // record position every 1000 lines
 			accum = 0
 			time.Sleep(2 * time.Second)
 			continue
 		}
 
 		if server.IsShuttingDown() {
-			recPos(c, appLog.Id, pos)
+			recPos(c, wc.App, nodeName, pos)
 			return nil
 		}
 	}
@@ -230,9 +217,9 @@ func parseLogLine(c common.ExecContext, line string) (logLine, error) {
 	}, nil
 }
 
-func parseLine(c common.ExecContext, line string, appLog AppLogFile, pos int64) (logLine, error) {
+func parseLine(c common.ExecContext, line string, wc WatchConfig, pos int64) (logLine, error) {
 	logLine, err := parseLogLine(c, line)
-	c.Log.Infof("id: %v, app: %v, pos: %v", appLog.App, appLog.Id, pos)
+	c.Log.Infof("app: %v, pos: %v", wc.App, pos)
 	return logLine, err
 }
 

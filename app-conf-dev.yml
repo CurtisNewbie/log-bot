@@ -1,5 +1,5 @@
 mode.production: false
-app.name: 'log-bot'
+app.name: 'logbot'
 
 server:
   host: "0.0.0.0"
@@ -10,7 +10,7 @@ server:
 mysql:
   enabled: true
   user: root
-  database: log_bot
+  database: logbot
   host: localhost
   port: 3306
 
@@ -34,3 +34,9 @@ tracing.propagation.keys:
   - username
   - role
   - services
+
+logbot:
+  node: node1
+  watch:
+    - app: goauth
+      file: ../goauth/goauth/goauth.log

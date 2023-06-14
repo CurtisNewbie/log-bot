@@ -1,12 +1,12 @@
 mode.production: true
 
-app.name: "log-bot"
+app.name: "logbot"
 
 mysql:
   enabled: true
   user: "${mysqlusername}"
   password: "${mysqlpassword}"
-  database: "log_bot"
+  database: "logbot"
   host: "${mysqladdr}"
   port: 3306
 
@@ -40,3 +40,9 @@ tracing.propagation.keys:
 logging.rolling.file: "/usr/src/logs/${app.name}.log"
 
 goauth.report.enabled: true
+
+logbot:
+  node: node1
+  watch:
+    - app: goauth
+      file: ../goauth/goauth/goauth.log
