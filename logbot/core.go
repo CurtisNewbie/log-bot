@@ -12,10 +12,16 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/curtisnewbie/gocommon/bus"
 	"github.com/curtisnewbie/gocommon/common"
+	"github.com/curtisnewbie/gocommon/mysql"
 	red "github.com/curtisnewbie/gocommon/redis"
 	"github.com/curtisnewbie/gocommon/server"
 	"github.com/go-redis/redis"
+)
+
+const (
+	ERROR_LOG_EVENT_BUS = "logbot.log.error"
 )
 
 var (
@@ -153,7 +159,7 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 			lineLen := int64(len([]byte(line)))
 			logLine, e := parseLine(c, line, wc, pos+lineLen)
 			if e == nil {
-				if e := reportLine(c, logLine); e != nil {
+				if e := reportLine(c, logLine, nodeName, wc); e != nil {
 					c.Log.Errorf("Failed to reportLine, logLine: %+v, %v", logLine, e)
 				}
 			} else {
@@ -188,8 +194,10 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 	}
 }
 
-type logLine struct {
-	Time    time.Time
+type LogLineEvent struct {
+	App     string
+	Node    string
+	Time    common.ETime
 	Level   string
 	TraceId string
 	SpanId  string
@@ -197,18 +205,27 @@ type logLine struct {
 	Message string
 }
 
-func parseLogLine(c common.ExecContext, line string) (logLine, error) {
+type LogLine struct {
+	Time    common.ETime
+	Level   string
+	TraceId string
+	SpanId  string
+	Func    string
+	Message string
+}
+
+func parseLogLine(c common.ExecContext, line string) (LogLine, error) {
 	matches := _logLinePat.FindStringSubmatch(line)
 	if matches == nil {
-		return logLine{}, fmt.Errorf("doesn't match pattern")
+		return LogLine{}, fmt.Errorf("doesn't match pattern")
 	}
 
 	time, ep := time.Parse(`2006-01-02 15:04:05.000`, matches[1])
 	if ep != nil {
-		return logLine{}, fmt.Errorf("time format illegal, %v", ep)
+		return LogLine{}, fmt.Errorf("time format illegal, %v", ep)
 	}
-	return logLine{
-		Time:    time,
+	return LogLine{
+		Time:    common.ETime(time),
 		Level:   matches[2],
 		TraceId: strings.TrimSpace(matches[3]),
 		SpanId:  strings.TrimSpace(matches[4]),
@@ -217,18 +234,48 @@ func parseLogLine(c common.ExecContext, line string) (logLine, error) {
 	}, nil
 }
 
-func parseLine(c common.ExecContext, line string, wc WatchConfig, pos int64) (logLine, error) {
+func parseLine(c common.ExecContext, line string, wc WatchConfig, pos int64) (LogLine, error) {
 	logLine, err := parseLogLine(c, line)
 	c.Log.Infof("app: %v, pos: %v", wc.App, pos)
 	return logLine, err
 }
 
-func reportLine(c common.ExecContext, line logLine) error {
+func reportLine(c common.ExecContext, line LogLine, node string, wc WatchConfig) error {
 	if line.Level != "ERROR" {
 		return nil
 	}
+	return bus.SendToEventBus(LogLineEvent{
+		App:     wc.App,
+		Node:    node,
+		Time:    line.Time,
+		Level:   line.Level,
+		TraceId: line.TraceId,
+		SpanId:  line.SpanId,
+		Func:    line.Func,
+		Message: line.Message,
+	}, ERROR_LOG_EVENT_BUS)
+}
 
-	c.Log.Errorf("Found %+v", line)
-	// TODO
-	return nil
+type SaveErrorLogCmd struct {
+	Node    string
+	App     string
+	Func    string
+	TraceId string
+	SpanId  string
+	ErrMsg  string
+}
+
+func SaveErrorLog(c common.ExecContext, evt LogLineEvent) error {
+	el := SaveErrorLogCmd{
+		Node:    evt.Node,
+		App:     evt.App,
+		Func:    evt.Func,
+		TraceId: evt.TraceId,
+		SpanId:  evt.SpanId,
+		ErrMsg:  evt.Message,
+	}
+	return mysql.GetConn().
+		Table("error_log").
+		Create(&el).
+		Error
 }

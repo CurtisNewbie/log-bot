@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	server.BeforeServerBootstrap(logbot.BeforeServerBootstrapp)
 	server.OnServerBootstrapped(logbot.AfterServerBootstrapped)
 	server.DefaultBootstrapServer(os.Args, common.EmptyExecContext())
 }

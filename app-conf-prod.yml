@@ -30,6 +30,14 @@ consul:
   healthCheckTimeout: 120s
   healthCheckFailedDeregisterAfter: 5s
 
+rabbitmq:
+  enabled: true
+  host: "rabbitmq"
+  port: 5672
+  username: "${rabbitmqusername}"
+  password: "${rabbitmqpassword}"
+  vhost: "/"
+
 tracing.propagation.keys:
   - id
   - userno
