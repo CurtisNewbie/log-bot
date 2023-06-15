@@ -40,3 +40,6 @@ logbot:
   watch:
     - app: goauth
       file: ../goauth/goauth/goauth.log
+
+
+goauth.client.enabled: false

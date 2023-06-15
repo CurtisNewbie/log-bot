@@ -47,10 +47,11 @@ tracing.propagation.keys:
 
 logging.rolling.file: "/usr/src/logs/${app.name}.log"
 
-goauth.report.enabled: true
-
 logbot:
   node: node1
   watch:
     - app: goauth
       file: ../goauth/goauth/goauth.log
+
+
+goauth.client.enabled: true

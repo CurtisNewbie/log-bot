@@ -18,6 +18,7 @@ import (
 	red "github.com/curtisnewbie/gocommon/redis"
 	"github.com/curtisnewbie/gocommon/server"
 	"github.com/go-redis/redis"
+	"gorm.io/gorm"
 )
 
 const (
@@ -278,4 +279,59 @@ func SaveErrorLog(c common.ExecContext, evt LogLineEvent) error {
 		Table("error_log").
 		Create(&el).
 		Error
+}
+
+type ListedErrorLog struct {
+	Id      int64        `json:"id"`
+	Node    string       `json:"node"`
+	App     string       `json:"app"`
+	Func    string       `json:"func"`
+	TraceId string       `json:"traceId"`
+	SpanId  string       `json:"spanId"`
+	ErrMsg  string       `json:"errMsg"`
+	CTime   common.ETime `json:"ctime" gorm:"column:ctime"`
+}
+
+type ListErrorLogReq struct {
+	App  string        `json:"app"`
+	Page common.Paging `json:"page"`
+}
+
+type ListErrorLogResp struct {
+	Page    common.Paging    `json:"page"`
+	Payload []ListedErrorLog `json:"payload"`
+}
+
+func newListErrorLogsQry(c common.ExecContext, r ListErrorLogReq) *gorm.DB {
+	t := mysql.GetConn().
+		Table("error_log")
+
+	if r.App != "" {
+		t = t.Where("app = ?", r.App)
+	}
+
+	return t
+}
+
+func ListErrorLogs(c common.ExecContext, r ListErrorLogReq) (ListErrorLogResp, error) {
+	var listed []ListedErrorLog
+	e := newListErrorLogsQry(c, r).
+		Offset(r.Page.GetOffset()).
+		Limit(r.Page.GetLimit()).
+		Order("id desc").
+		Scan(&listed).Error
+
+	if e != nil {
+		return ListErrorLogResp{}, e
+	}
+
+	var total int
+	e = newListErrorLogsQry(c, r).
+		Select("count(*)").
+		Scan(&total).Error
+	if e != nil {
+		return ListErrorLogResp{}, e
+	}
+
+	return ListErrorLogResp{Page: r.Page.ToRespPage(total), Payload: listed}, nil
 }
