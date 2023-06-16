@@ -28,4 +28,18 @@ func TestParseLine(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("%+v", logLine)
+
+	line = `2023-06-16 16:29:48.811 INFO  [3pdac13hagg9v8cs,pskalvoqmaets17f] server.BootstrapServer        :
+
+
+
+---------------------------------------------- goauth started (took: 59ms) --------------------------------------------
+
+`
+
+	logLine, err = parseLogLine(common.EmptyExecContext(), line)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("%+v", logLine)
 }

@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	_logLinePat = regexp.MustCompile(`^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[([\w ]+),([\w ]+)\] ([\w\.]+) +: +(.*)`)
+	_logLinePat = regexp.MustCompile(`^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[([\w ]+),([\w ]+)\] ([\w\.]+) +: *((?s).*)`)
 )
 
 func lastPos(c common.ExecContext, app string, nodeName string) (int64, error) {
@@ -102,6 +102,9 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 
 	lastRead := time.Now()
 	accum := 0 // lines read so far (will be reset when it reaches 1000)
+	var prevBytesRead int64
+	var prevLine string
+	var prevLogLine *LogLine // a single log can contain multiple lines
 
 	for {
 		if rd == nil {
@@ -120,7 +123,7 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 		}
 
 		// check if the file is still valid
-		if time.Since(lastRead) > 30*time.Second {
+		if time.Since(lastRead) > 15*time.Second {
 			c.Log.Debug("Checking if the file is still valid, ", wc.File)
 
 			reopenFile := false
@@ -157,22 +160,45 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 
 		line, err := rd.ReadString('\n')
 		if err == nil {
-			lineLen := int64(len([]byte(line)))
-			logLine, e := parseLine(c, line, wc, pos+lineLen)
+
+			logLine, e := parseLogLine(c, line)
 			if e == nil {
-				if e := reportLine(c, logLine, nodeName, wc); e != nil {
-					c.Log.Errorf("Failed to reportLine, logLine: %+v, %v", logLine, e)
+
+				// prevLogLine == nil, won't happen unless it is the first log being parsed, or is really in incorrect format
+				if prevLogLine != nil {
+
+					// always report the previous log
+					if e := reportLine(c, *prevLogLine, nodeName, wc); e != nil {
+						c.Log.Errorf("Failed to reportLine, logLine: %+v, %v", *prevLogLine, e)
+					}
+
+					// move the position only when we report the previous log
+					pos += prevBytesRead
+					recPos(c, wc.App, nodeName, pos)
+					c.Log.Debugf("app: %v, pos: %v", wc.App, pos)
 				}
+
+				prevBytesRead = int64(len([]byte(line)))
+				prevLine = line
+				prevLogLine = &logLine
 			} else {
-				c.Log.Errorf("Failed to parse logLine, %v, line: '%v'", e, line)
+				// if current line is not parseable, it's part of previous line
+				// we put them together and we parse again
+				//
+				// yes, we may will just parse it before we do reportLine, but for
+				// 90% of the time, the log is single line
+				// so it's better leave it here
+				prevBytesRead += int64(len([]byte(line)))
+				prevLine = prevLine + "\n" + line
+				if parsed, ep := parseLogLine(c, prevLine); ep == nil {
+					prevLogLine = &parsed
+				}
 			}
 
-			pos += lineLen // move the position
 			lastRead = time.Now()
 			accum += 1
 
 			if accum == 1000 {
-				recPos(c, wc.App, nodeName, pos) // record position every 1000 lines
 				time.Sleep(500 * time.Millisecond)
 				accum = 0
 			}
@@ -182,14 +208,12 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 
 		// the file may be truncated or renamed
 		if err == io.EOF {
-			recPos(c, wc.App, nodeName, pos) // record position every 1000 lines
 			accum = 0
 			time.Sleep(2 * time.Second)
 			continue
 		}
 
 		if server.IsShuttingDown() {
-			recPos(c, wc.App, nodeName, pos)
 			return nil
 		}
 	}
@@ -233,12 +257,6 @@ func parseLogLine(c common.ExecContext, line string) (LogLine, error) {
 		Func:    matches[5],
 		Message: matches[6],
 	}, nil
-}
-
-func parseLine(c common.ExecContext, line string, wc WatchConfig, pos int64) (LogLine, error) {
-	logLine, err := parseLogLine(c, line)
-	c.Log.Infof("app: %v, pos: %v", wc.App, pos)
-	return logLine, err
 }
 
 func reportLine(c common.ExecContext, line LogLine, node string, wc WatchConfig) error {
