@@ -206,7 +206,6 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 			continue
 		}
 
-		// the file may be truncated or renamed
 		if err == io.EOF {
 			accum = 0
 			time.Sleep(2 * time.Second)
