@@ -14,7 +14,8 @@ func TestParseLine(t *testing.T) {
 	}
 	t.Logf("%+v", logLine)
 
-	line = `2023-06-13 22:16:13.746 ERROR [v2geq7340pbfxcc9,k1gsschfgarpc7no] main.registerWebEndpoints.func2 : Oh on!`
+	line = `2023-06-13 22:16:13.746 ERROR [v2geq7340pbfxcc9,k1gsschfgarpc7no] main.registerWebEndpoints.func2 : Oh on!
+continue on a new line :D`
 	logLine, err = parseLogLine(common.EmptyExecContext(), line)
 	if err != nil {
 		t.Fatal(err)

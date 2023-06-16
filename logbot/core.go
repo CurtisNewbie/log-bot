@@ -29,6 +29,10 @@ var (
 	_logLinePat = regexp.MustCompile(`^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[([\w ]+),([\w ]+)\] ([\w\.]+) +: *((?s).*)`)
 )
 
+func init() {
+	common.SetDefProp("logbot.node", "default")
+}
+
 func lastPos(c common.ExecContext, app string, nodeName string) (int64, error) {
 	cmd := red.GetRedis().Get(fmt.Sprintf("log-bot:pos:%v:%v", nodeName, app))
 	if cmd.Err() != nil {
