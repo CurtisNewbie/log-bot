@@ -26,7 +26,8 @@ const (
 )
 
 var (
-	_logLinePat = regexp.MustCompile(`^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[([\w ]+),([\w ]+)\] ([\w\.]+) +: *((?s).*)`)
+	_goLogPat   = regexp.MustCompile(`^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[([\w ]+),([\w ]+)\] ([\w\.]+) +: *((?s).*)`)
+	_javaLogPat = regexp.MustCompile(`^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[[\w \-]+,([\w ]*),([\w ]*),[\w ]*\] [\w\.]+ \-\-\- \[[\w\- ]+\] ([\w\-\.]+) +: *((?s).*)`)
 )
 
 func init() {
@@ -165,7 +166,7 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 		line, err := rd.ReadString('\n')
 		if err == nil {
 
-			logLine, e := parseLogLine(c, line)
+			logLine, e := parseLogLine(c, line, wc.Type)
 			if e == nil {
 
 				// prevLogLine == nil, won't happen unless it is the first log being parsed, or is really in incorrect format
@@ -193,8 +194,8 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 				// 90% of the time, the log is single line
 				// so it's better leave it here
 				prevBytesRead += int64(len([]byte(line)))
-				prevLine = prevLine + "\n" + line
-				if parsed, ep := parseLogLine(c, prevLine); ep == nil {
+				prevLine = prevLine + line
+				if parsed, ep := parseLogLine(c, prevLine, wc.Type); ep == nil {
 					prevLogLine = &parsed
 				}
 			}
@@ -229,7 +230,7 @@ type LogLineEvent struct {
 	Level   string
 	TraceId string
 	SpanId  string
-	Func    string
+	Caller  string
 	Message string
 }
 
@@ -238,12 +239,18 @@ type LogLine struct {
 	Level   string
 	TraceId string
 	SpanId  string
-	Func    string
+	Caller  string
 	Message string
 }
 
-func parseLogLine(c common.ExecContext, line string) (LogLine, error) {
-	matches := _logLinePat.FindStringSubmatch(line)
+func parseLogLine(c common.ExecContext, line string, typ string) (LogLine, error) {
+	var pat *regexp.Regexp
+	if typ == "java" {
+		pat = _javaLogPat
+	} else {
+		pat = _goLogPat
+	}
+	matches := pat.FindStringSubmatch(line)
 	if matches == nil {
 		return LogLine{}, fmt.Errorf("doesn't match pattern")
 	}
@@ -257,7 +264,7 @@ func parseLogLine(c common.ExecContext, line string) (LogLine, error) {
 		Level:   matches[2],
 		TraceId: strings.TrimSpace(matches[3]),
 		SpanId:  strings.TrimSpace(matches[4]),
-		Func:    matches[5],
+		Caller:  matches[5],
 		Message: matches[6],
 	}, nil
 }
@@ -273,7 +280,7 @@ func reportLine(c common.ExecContext, line LogLine, node string, wc WatchConfig)
 		Level:   line.Level,
 		TraceId: line.TraceId,
 		SpanId:  line.SpanId,
-		Func:    line.Func,
+		Caller:  line.Caller,
 		Message: line.Message,
 	}, ERROR_LOG_EVENT_BUS)
 }
@@ -281,7 +288,7 @@ func reportLine(c common.ExecContext, line LogLine, node string, wc WatchConfig)
 type SaveErrorLogCmd struct {
 	Node    string
 	App     string
-	Func    string
+	Caller  string
 	TraceId string
 	SpanId  string
 	ErrMsg  string
@@ -291,7 +298,7 @@ func SaveErrorLog(c common.ExecContext, evt LogLineEvent) error {
 	el := SaveErrorLogCmd{
 		Node:    evt.Node,
 		App:     evt.App,
-		Func:    evt.Func,
+		Caller:  evt.Caller,
 		TraceId: evt.TraceId,
 		SpanId:  evt.SpanId,
 		ErrMsg:  evt.Message,
@@ -306,7 +313,7 @@ type ListedErrorLog struct {
 	Id      int64        `json:"id"`
 	Node    string       `json:"node"`
 	App     string       `json:"app"`
-	Func    string       `json:"func"`
+	Caller  string       `json:"caller"`
 	TraceId string       `json:"traceId"`
 	SpanId  string       `json:"spanId"`
 	ErrMsg  string       `json:"errMsg"`

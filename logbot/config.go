@@ -5,6 +5,7 @@ import "github.com/curtisnewbie/gocommon/common"
 type WatchConfig struct {
 	App  string `yaml:"app"`
 	File string `yaml:"file"`
+	Type string `yaml:"type"`
 }
 
 type LogBotConfig struct {
