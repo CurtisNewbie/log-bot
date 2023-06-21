@@ -292,6 +292,7 @@ type SaveErrorLogCmd struct {
 	TraceId string
 	SpanId  string
 	ErrMsg  string
+	RTime   common.ETime `gorm:"column:rtime"`
 }
 
 func SaveErrorLog(c common.ExecContext, evt LogLineEvent) error {
@@ -302,6 +303,7 @@ func SaveErrorLog(c common.ExecContext, evt LogLineEvent) error {
 		TraceId: evt.TraceId,
 		SpanId:  evt.SpanId,
 		ErrMsg:  evt.Message,
+		RTime:   evt.Time,
 	}
 	return mysql.GetConn().
 		Table("error_log").
@@ -317,7 +319,7 @@ type ListedErrorLog struct {
 	TraceId string       `json:"traceId"`
 	SpanId  string       `json:"spanId"`
 	ErrMsg  string       `json:"errMsg"`
-	CTime   common.ETime `json:"ctime" gorm:"column:ctime"`
+	RTime   common.ETime `json:"rtime" gorm:"column:rtime"`
 }
 
 type ListErrorLogReq struct {

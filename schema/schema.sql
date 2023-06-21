@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS logbot.error_log (
   `trace_id` varchar(25) NOT NULL DEFAULT '' COMMENT 'trace id',
   `span_id` varchar(25) NOT NULL DEFAULT '' COMMENT 'trace id',
   `err_msg` TEXT COMMENT 'error msg',
-  `ctime` timestamp default current_timestamp,
+  `rtime` timestamp default current_timestamp COMMENT 'report time',
+  `ctime` timestamp default current_timestamp COMMENT 'create time',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Application Error Log';
