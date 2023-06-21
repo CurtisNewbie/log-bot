@@ -259,13 +259,21 @@ func parseLogLine(c common.ExecContext, line string, typ string) (LogLine, error
 	if ep != nil {
 		return LogLine{}, fmt.Errorf("time format illegal, %v", ep)
 	}
+
+	// only save the first 1000 characters
+	msg := matches[6]
+	msgRu :=[]rune(msg)
+	if len(msgRu) > 1000 {
+		msg = string(msgRu[:1001])
+	}
+
 	return LogLine{
 		Time:    common.ETime(time),
 		Level:   matches[2],
 		TraceId: strings.TrimSpace(matches[3]),
 		SpanId:  strings.TrimSpace(matches[4]),
 		Caller:  matches[5],
-		Message: matches[6],
+		Message: msg,
 	}, nil
 }
 
