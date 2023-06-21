@@ -37,7 +37,7 @@ tracing.propagation.keys:
   - userno
   - username
   - role
-  - services
+  - roleno
 
 logbot:
   node: node1

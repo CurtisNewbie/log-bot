@@ -12,8 +12,10 @@ mysql:
 
 redis:
   enabled: true
-  address: localhost
+  address: "redis"
   port: 6379
+  username:
+  password:
   database: 0
 
 server:
@@ -26,9 +28,6 @@ consul:
   enabled: true
   consulAddress: consul:8500
   healthCheckUrl: /health
-  healthCheckInterval: 120s
-  healthCheckTimeout: 120s
-  healthCheckFailedDeregisterAfter: 5s
 
 rabbitmq:
   enabled: true
@@ -48,10 +47,32 @@ tracing.propagation.keys:
 logging.rolling.file: "/usr/src/logs/${app.name}.log"
 
 logbot:
-  node: node1
+  node: docker-compose-1
   watch:
     - app: goauth
-      file: ../goauth/goauth/goauth.log
+      type: go
+      file: /usr/src/logs/watch/goauth.log
+    - app: hammer
+      type: go
+      file: /usr/src/logs/watch/hammer.log
+    - app: vfm
+      type: go
+      file: /usr/src/logs/watch/vfm.log
+    - app: mini-fstore
+      type: go
+      file: /usr/src/logs/watch/mini-fstore.log
+    - app: dtaskgo
+      type: go
+      file: /usr/src/logs/watch/dtaskgo.log
+    - app: fantahsea
+      type: go
+      file: /usr/src/logs/watch/fantahsea.log
+    - app: auth-gateway
+      type: java
+      file: /usr/src/logs/watch/auth-gateway.log
+    - app: auth-service
+      type: java
+      file: /usr/src/logs/watch/auth-service.log
 
 
-goauth.client.enabled: true
+goauth.report.enabled: true
