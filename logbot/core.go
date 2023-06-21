@@ -255,7 +255,7 @@ func parseLogLine(c common.ExecContext, line string, typ string) (LogLine, error
 		return LogLine{}, fmt.Errorf("doesn't match pattern")
 	}
 
-	time, ep := time.Parse(`2006-01-02 15:04:05.000`, matches[1])
+	time, ep := time.ParseInLocation(`2006-01-02 15:04:05.000`, matches[1], time.Local)
 	if ep != nil {
 		return LogLine{}, fmt.Errorf("time format illegal, %v", ep)
 	}
