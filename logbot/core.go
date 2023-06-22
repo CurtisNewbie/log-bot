@@ -262,7 +262,7 @@ func parseLogLine(c common.ExecContext, line string, typ string) (LogLine, error
 
 	// only save the first 1000 characters
 	msg := matches[6]
-	msgRu :=[]rune(msg)
+	msgRu := []rune(msg)
 	if len(msgRu) > 1000 {
 		msg = string(msgRu[:1001])
 	}
@@ -372,4 +372,9 @@ func ListErrorLogs(c common.ExecContext, r ListErrorLogReq) (ListErrorLogResp, e
 	}
 
 	return ListErrorLogResp{Page: r.Page.ToRespPage(total), Payload: listed}, nil
+}
+
+func RemoveErrorLogsBefore(c common.ExecContext, upperBound time.Time) error {
+	c.Log.Infof("Remove error logs before %s", upperBound)
+	return mysql.GetConn().Exec("delete from error_log where rtime < ?", upperBound).Error
 }

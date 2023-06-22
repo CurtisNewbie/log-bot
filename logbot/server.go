@@ -1,10 +1,13 @@
 package logbot
 
 import (
+	"time"
+
 	"github.com/curtisnewbie/gocommon/bus"
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/gocommon/goauth"
 	"github.com/curtisnewbie/gocommon/server"
+	"github.com/curtisnewbie/gocommon/task"
 	"github.com/gin-gonic/gin"
 )
 
@@ -37,6 +40,13 @@ func BeforeServerBootstrapp(c common.ExecContext) error {
 			return nil
 		})
 		goauth.ReportPathsOnBootstrapped()
+	}
+
+	if IsRmErrorLogTaskEnabled() {
+		task.ScheduleNamedDistributedTask("0 0 0/1 * * ?", "RemoveErrorLogTask", func(ec common.ExecContext) error {
+			gap := 7 * 24 * time.Hour // seven days ago
+			return RemoveErrorLogsBefore(ec, time.Now().Add(-gap))
+		})
 	}
 
 	return nil

@@ -4,13 +4,14 @@ Bot for watching and parsing logs
 
 ## Configuration
 
-| Property            | Description                          | Default Value |
-|---------------------|--------------------------------------|---------------|
-| logbot.node         | name of the node                     | 'default'     |
-| logbot.[]watch      | list of watch config                 |               |
-| logbot.[]watch.app  | app name                             |               |
-| logbot.[]watch.file | path of the log file                 |               |
-| logbot.[]watch.type | type of log pattern [ 'go', 'java' ] | 'go'          |
+| Property              | Description                                          | Default Value |
+|-----------------------|------------------------------------------------------|---------------|
+| logbot.node           | name of the node                                     | 'default'     |
+| logbot.[]watch        | list of watch config                                 |               |
+| logbot.[]watch.app    | app name                                             |               |
+| logbot.[]watch.file   | path of the log file                                 |               |
+| logbot.[]watch.type   | type of log pattern [ 'go', 'java' ]                 | 'go'          |
+| task.remove-error-log | enable task to remove error logs reported 7 days ago | false         |
 
 ## API
 
