@@ -1,0 +1,1 @@
+alter table logbot.error_log add INDEX idx_rtime (rtime);

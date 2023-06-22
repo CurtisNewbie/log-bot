@@ -356,7 +356,7 @@ func ListErrorLogs(c common.ExecContext, r ListErrorLogReq) (ListErrorLogResp, e
 	e := newListErrorLogsQry(c, r).
 		Offset(r.Page.GetOffset()).
 		Limit(r.Page.GetLimit()).
-		Order("id desc").
+		Order("rtime desc").
 		Scan(&listed).Error
 
 	if e != nil {
