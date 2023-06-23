@@ -2,6 +2,14 @@
 
 Bot for watching and parsing logs
 
+## Requirements
+
+- MySQL
+- Reids
+- Consul
+- RabbitMQ
+- [Goauth](https://github.com/CurtisNewbie/goauth)
+
 ## Configuration
 
 | Property              | Description                                          | Default Value |
