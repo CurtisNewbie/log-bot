@@ -5,7 +5,7 @@ Bot for watching and parsing logs
 ## Requirements
 
 - MySQL
-- Reids
+- Redis
 - Consul
 - RabbitMQ
 - [Goauth](https://github.com/CurtisNewbie/goauth)
