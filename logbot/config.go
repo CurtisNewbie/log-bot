@@ -11,9 +11,9 @@ func init() {
 }
 
 type WatchConfig struct {
-	App  string `yaml:"app"`
-	File string `yaml:"file"`
-	Type string `yaml:"type"`
+	App  string
+	File string
+	Type string
 }
 
 type LogBotConfig struct {
