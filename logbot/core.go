@@ -203,8 +203,8 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 			lastRead = time.Now()
 			accum += 1
 
-			if accum == 1000 {
-				time.Sleep(500 * time.Millisecond)
+			if accum == 250 {
+				time.Sleep(250 * time.Millisecond)
 				accum = 0
 			}
 
