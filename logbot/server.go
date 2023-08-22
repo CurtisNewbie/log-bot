@@ -16,26 +16,24 @@ const (
 	RES_NAME = "Manage LogBot"
 )
 
-func BeforeServerBootstrapp(c common.ExecContext) error {
+func BeforeServerBootstrapp(c common.Rail) error {
 	if e := bus.DeclareEventBus(ERROR_LOG_EVENT_BUS); e != nil {
 		return e
 	}
 
-	if e := bus.SubscribeEventBus(ERROR_LOG_EVENT_BUS, 2, func(l LogLineEvent) error {
-		ec := common.EmptyExecContext()
-		return SaveErrorLog(ec, l)
-	}); e != nil {
-		return e
-	}
+	bus.SubscribeEventBus(ERROR_LOG_EVENT_BUS, 2,
+		func(rail common.Rail, l LogLineEvent) error {
+			return SaveErrorLog(rail, l)
+		})
 
 	// List error logs endpoint
 	server.IPost("/log/error/list", listErrorLogEp, goauth.PathDocExtra(goauth.PathDoc{Desc: "List error logs", Type: goauth.PT_PROTECTED, Code: RES_CODE}))
 
 	// report resources and paths if enabled
 	if goauth.IsEnabled() {
-		server.OnServerBootstrapped(func(sc common.ExecContext) error {
+		server.PreServerBootstrap(func(sc common.Rail) error {
 			if e := goauth.AddResource(sc.Ctx, goauth.AddResourceReq{Name: RES_NAME, Code: RES_CODE}); e != nil {
-				c.Log.Errorf("Failed to create goauth resource, %v", e)
+				c.Errorf("Failed to create goauth resource, %v", e)
 			}
 			return nil
 		})
@@ -43,7 +41,7 @@ func BeforeServerBootstrapp(c common.ExecContext) error {
 	}
 
 	if IsRmErrorLogTaskEnabled() {
-		task.ScheduleNamedDistributedTask("0 0 0/1 * * ?", "RemoveErrorLogTask", func(ec common.ExecContext) error {
+		task.ScheduleNamedDistributedTask("0 0/1 * * ?", false, "RemoveErrorLogTask", func(ec common.Rail) error {
 			gap := 7 * 24 * time.Hour // seven days ago
 			return RemoveErrorLogsBefore(ec, time.Now().Add(-gap))
 		})
@@ -52,19 +50,18 @@ func BeforeServerBootstrapp(c common.ExecContext) error {
 	return nil
 }
 
-func listErrorLogEp(c *gin.Context, ec common.ExecContext, req ListErrorLogReq) (ListErrorLogResp, error) {
+func listErrorLogEp(c *gin.Context, ec common.Rail, req ListErrorLogReq) (ListErrorLogResp, error) {
 	return ListErrorLogs(ec, req)
 }
 
-func AfterServerBootstrapped(c common.ExecContext) error {
+func AfterServerBootstrapped(rail common.Rail) error {
 	logBotConfig := LoadLogBotConfig().Config
 	for _, wc := range logBotConfig.WatchConfigs {
-		go func(w WatchConfig) {
-			c := common.EmptyExecContext()
-			if e := WatchLogFile(c, w, logBotConfig.NodeName); e != nil {
-				c.Log.Errorf("WatchLogFile, app: %v, file: %v, %v", w.App, w.File, e)
+		go func(w WatchConfig, nextRail common.Rail) {
+			if e := WatchLogFile(nextRail, w, logBotConfig.NodeName); e != nil {
+				nextRail.Errorf("WatchLogFile, app: %v, file: %v, %v", w.App, w.File, e)
 			}
-		}(wc)
+		}(wc, rail.NextSpan())
 	}
 	return nil
 }

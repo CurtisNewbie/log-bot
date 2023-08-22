@@ -34,7 +34,7 @@ func init() {
 	common.SetDefProp("logbot.node", "default")
 }
 
-func lastPos(c common.ExecContext, app string, nodeName string) (int64, error) {
+func lastPos(rail common.Rail, app string, nodeName string) (int64, error) {
 	cmd := red.GetRedis().Get(fmt.Sprintf("log-bot:pos:%v:%v", nodeName, app))
 	if cmd.Err() != nil {
 		if errors.Is(cmd.Err(), redis.Nil) {
@@ -53,14 +53,14 @@ func lastPos(c common.ExecContext, app string, nodeName string) (int64, error) {
 	return int64(n), nil
 }
 
-func recPos(c common.ExecContext, app string, nodeName string, pos int64) error {
+func recPos(rail common.Rail, app string, nodeName string, pos int64) error {
 	posStr := strconv.FormatInt(pos, 10)
 	cmd := red.GetRedis().Set(fmt.Sprintf("log-bot:pos:%v:%v", nodeName, app), posStr, 0)
 	return cmd.Err()
 }
 
-func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
-	c.Log.Infof("Watching log file '%v' for app '%v'", wc.File, wc.App)
+func WatchLogFile(rail common.Rail, wc WatchConfig, nodeName string) error {
+	rail.Infof("Watching log file '%v' for app '%v'", wc.File, wc.App)
 	f, err := os.Open(wc.File)
 
 	if err != nil {
@@ -73,7 +73,7 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 		defer f.Close() // the log file is opened
 	}
 
-	pos, el := lastPos(c, wc.App, nodeName)
+	pos, el := lastPos(rail, wc.App, nodeName)
 	if el != nil {
 		return fmt.Errorf("failed to find last pos, %v", el)
 	}
@@ -95,7 +95,7 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 			if e != nil {
 				return fmt.Errorf("failed to seek pos, %v", e)
 			}
-			c.Log.Infof("Log file '%v' seek to position %v", wc.File, pos)
+			rail.Infof("Log file '%v' seek to position %v", wc.File, pos)
 		}
 	}
 
@@ -120,7 +120,7 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 				f = nil
 				continue // the file is still not created
 			}
-			c.Log.Infof("Opened %v", wc.File)
+			rail.Infof("Opened %v", wc.File)
 
 			// new file, create reader and set pos = 0
 			rd = bufio.NewReader(f)
@@ -129,7 +129,7 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 
 		// check if the file is still valid
 		if time.Since(lastRead) > 15*time.Second {
-			c.Log.Debug("Checking if the file is still valid, ", wc.File)
+			rail.Debug("Checking if the file is still valid, ", wc.File)
 
 			reopenFile := false
 
@@ -158,7 +158,7 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 				f.Close()
 				rd = nil
 				f = nil
-				c.Log.Infof("Closed file '%v' fd", wc.File)
+				rail.Infof("Closed file '%v' fd", wc.File)
 				continue
 			}
 		}
@@ -166,21 +166,21 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 		line, err := rd.ReadString('\n')
 		if err == nil {
 
-			logLine, e := parseLogLine(c, line, wc.Type)
+			logLine, e := parseLogLine(rail, line, wc.Type)
 			if e == nil {
 
 				// prevLogLine == nil, won't happen unless it is the first log being parsed, or is really in incorrect format
 				if prevLogLine != nil {
 
 					// always report the previous log
-					if e := reportLine(c, *prevLogLine, nodeName, wc); e != nil {
-						c.Log.Errorf("Failed to reportLine, logLine: %+v, %v", *prevLogLine, e)
+					if e := reportLine(rail, *prevLogLine, nodeName, wc); e != nil {
+						rail.Errorf("Failed to reportLine, logLine: %+v, %v", *prevLogLine, e)
 					}
 
 					// move the position only when we report the previous log
 					pos += prevBytesRead
-					recPos(c, wc.App, nodeName, pos)
-					c.Log.Debugf("app: %v, pos: %v", wc.App, pos)
+					recPos(rail, wc.App, nodeName, pos)
+					rail.Debugf("app: %v, pos: %v", wc.App, pos)
 				}
 
 				prevBytesRead = int64(len([]byte(line)))
@@ -195,7 +195,7 @@ func WatchLogFile(c common.ExecContext, wc WatchConfig, nodeName string) error {
 				// so it's better leave it here
 				prevBytesRead += int64(len([]byte(line)))
 				prevLine = prevLine + line
-				if parsed, ep := parseLogLine(c, prevLine, wc.Type); ep == nil {
+				if parsed, ep := parseLogLine(rail, prevLine, wc.Type); ep == nil {
 					prevLogLine = &parsed
 				}
 			}
@@ -243,7 +243,7 @@ type LogLine struct {
 	Message string
 }
 
-func parseLogLine(c common.ExecContext, line string, typ string) (LogLine, error) {
+func parseLogLine(c common.Rail, line string, typ string) (LogLine, error) {
 	var pat *regexp.Regexp
 	if typ == "java" {
 		pat = _javaLogPat
@@ -277,20 +277,23 @@ func parseLogLine(c common.ExecContext, line string, typ string) (LogLine, error
 	}, nil
 }
 
-func reportLine(c common.ExecContext, line LogLine, node string, wc WatchConfig) error {
+func reportLine(rail common.Rail, line LogLine, node string, wc WatchConfig) error {
 	if line.Level != "ERROR" {
 		return nil
 	}
-	return bus.SendToEventBus(LogLineEvent{
-		App:     wc.App,
-		Node:    node,
-		Time:    line.Time,
-		Level:   line.Level,
-		TraceId: line.TraceId,
-		SpanId:  line.SpanId,
-		Caller:  line.Caller,
-		Message: line.Message,
-	}, ERROR_LOG_EVENT_BUS)
+	return bus.SendToEventBus(rail,
+		LogLineEvent{
+			App:     wc.App,
+			Node:    node,
+			Time:    line.Time,
+			Level:   line.Level,
+			TraceId: line.TraceId,
+			SpanId:  line.SpanId,
+			Caller:  line.Caller,
+			Message: line.Message,
+		},
+		ERROR_LOG_EVENT_BUS,
+	)
 }
 
 type SaveErrorLogCmd struct {
@@ -303,7 +306,7 @@ type SaveErrorLogCmd struct {
 	RTime   common.ETime `gorm:"column:rtime"`
 }
 
-func SaveErrorLog(c common.ExecContext, evt LogLineEvent) error {
+func SaveErrorLog(rail common.Rail, evt LogLineEvent) error {
 	el := SaveErrorLogCmd{
 		Node:    evt.Node,
 		App:     evt.App,
@@ -340,7 +343,7 @@ type ListErrorLogResp struct {
 	Payload []ListedErrorLog `json:"payload"`
 }
 
-func newListErrorLogsQry(c common.ExecContext, r ListErrorLogReq) *gorm.DB {
+func newListErrorLogsQry(rail common.Rail, r ListErrorLogReq) *gorm.DB {
 	t := mysql.GetConn().
 		Table("error_log")
 
@@ -351,9 +354,9 @@ func newListErrorLogsQry(c common.ExecContext, r ListErrorLogReq) *gorm.DB {
 	return t
 }
 
-func ListErrorLogs(c common.ExecContext, r ListErrorLogReq) (ListErrorLogResp, error) {
+func ListErrorLogs(rail common.Rail, r ListErrorLogReq) (ListErrorLogResp, error) {
 	var listed []ListedErrorLog
-	e := newListErrorLogsQry(c, r).
+	e := newListErrorLogsQry(rail, r).
 		Offset(r.Page.GetOffset()).
 		Limit(r.Page.GetLimit()).
 		Order("rtime desc").
@@ -364,7 +367,7 @@ func ListErrorLogs(c common.ExecContext, r ListErrorLogReq) (ListErrorLogResp, e
 	}
 
 	var total int
-	e = newListErrorLogsQry(c, r).
+	e = newListErrorLogsQry(rail, r).
 		Select("count(*)").
 		Scan(&total).Error
 	if e != nil {
@@ -374,7 +377,7 @@ func ListErrorLogs(c common.ExecContext, r ListErrorLogReq) (ListErrorLogResp, e
 	return ListErrorLogResp{Page: r.Page.ToRespPage(total), Payload: listed}, nil
 }
 
-func RemoveErrorLogsBefore(c common.ExecContext, upperBound time.Time) error {
-	c.Log.Infof("Remove error logs before %s", upperBound)
+func RemoveErrorLogsBefore(rail common.Rail, upperBound time.Time) error {
+	rail.Infof("Remove error logs before %s", upperBound)
 	return mysql.GetConn().Exec("delete from error_log where rtime < ?", upperBound).Error
 }

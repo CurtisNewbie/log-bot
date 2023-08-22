@@ -8,7 +8,7 @@ import (
 
 func TestParseLine(t *testing.T) {
 	line := `2023-06-13 12:58:35.509 INFO  [                ,                ] consul.DeregisterService      : Deregistering current instance on Consul, service_id: 'goauth-8081'`
-	logLine, err := parseLogLine(common.EmptyExecContext(), line, "go")
+	logLine, err := parseLogLine(common.EmptyRail(), line, "go")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -16,7 +16,7 @@ func TestParseLine(t *testing.T) {
 
 	line = `2023-06-13 22:16:13.746 ERROR [v2geq7340pbfxcc9,k1gsschfgarpc7no] main.registerWebEndpoints.func2 : Oh on!
 continue on a new line :D`
-	logLine, err = parseLogLine(common.EmptyExecContext(), line, "go")
+	logLine, err = parseLogLine(common.EmptyRail(), line, "go")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +24,7 @@ continue on a new line :D`
 
 	line = `2023-06-14 09:50:30.500 DEBUG [ptqnta70npjjxfz8,114lkur90ui6ywqt] redis.TimedRLockRun.func1     : Released lock for key 'rcache:POST:/goauth/open/api/path/update'
 `
-	logLine, err = parseLogLine(common.EmptyExecContext(), line, "go")
+	logLine, err = parseLogLine(common.EmptyRail(), line, "go")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ continue on a new line :D`
 
 `
 
-	logLine, err = parseLogLine(common.EmptyExecContext(), line, "go")
+	logLine, err = parseLogLine(common.EmptyRail(), line, "go")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ continue on a new line :D`
 
 	line = `2023-06-17 17:34:48.762  INFO [auth-service,,,] 78446 --- [           main] .c.m.r.c.YamlBasedRedissonClientProvider : Loading RedissonClient from yaml config file, reading environment property: redisson-config`
 
-	logLine, err = parseLogLine(common.EmptyExecContext(), line, "java")
+	logLine, err = parseLogLine(common.EmptyRail(), line, "java")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +112,7 @@ Caused by: com.netflix.client.ClientException: Load balancer does not have avail
 	at org.springframework.cloud.openfeign.ribbon.LoadBalancerFeignClient.execute(LoadBalancerFeignClient.java:83)
 	... 25 common frames omitted`
 
-	logLine, err = parseLogLine(common.EmptyExecContext(), line, "java")
+	logLine, err = parseLogLine(common.EmptyRail(), line, "java")
 	if err != nil {
 		t.Fatal(err)
 	}
