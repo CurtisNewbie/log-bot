@@ -1,13 +1,13 @@
 package logbot
 
-import "github.com/curtisnewbie/gocommon/common"
+import "github.com/curtisnewbie/miso/core"
 
 const (
 	PROP_ENABLE_REMOVE_ERR_LOG_TASK = "task.remove-error-log"
 )
 
 func init() {
-	common.SetDefProp(PROP_ENABLE_REMOVE_ERR_LOG_TASK, false)
+	core.SetDefProp(PROP_ENABLE_REMOVE_ERR_LOG_TASK, false)
 }
 
 type WatchConfig struct {
@@ -27,10 +27,10 @@ type Config struct {
 
 func LoadLogBotConfig() Config {
 	var conf Config
-	common.UnmarshalFromProp(&conf)
+	core.UnmarshalFromProp(&conf)
 	return conf
 }
 
 func IsRmErrorLogTaskEnabled() bool {
-	return common.GetPropBool(PROP_ENABLE_REMOVE_ERR_LOG_TASK)
+	return core.GetPropBool(PROP_ENABLE_REMOVE_ERR_LOG_TASK)
 }

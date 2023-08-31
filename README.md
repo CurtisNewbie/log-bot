@@ -12,7 +12,7 @@ Bot for watching and parsing logs
 
 ## Configuration
 
-For more configuration, check [gocommon](https://github.com/CurtisNewbie/gocommon).
+For more configuration, check [miso](https://github.com/CurtisNewbie/miso).
 
 | Property              | Description                                          | Default Value |
 |-----------------------|------------------------------------------------------|---------------|

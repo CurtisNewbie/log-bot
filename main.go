@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/curtisnewbie/gocommon/server"
+	"github.com/curtisnewbie/miso/server"
 	"github.com/curtisnewbie/log-bot/logbot"
 )
 
