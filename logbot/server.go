@@ -4,10 +4,7 @@ import (
 	"time"
 
 	"github.com/curtisnewbie/gocommon/goauth"
-	"github.com/curtisnewbie/miso/bus"
-	"github.com/curtisnewbie/miso/core"
-	"github.com/curtisnewbie/miso/server"
-	"github.com/curtisnewbie/miso/task"
+	"github.com/curtisnewbie/miso/miso"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,18 +13,18 @@ const (
 	RES_NAME = "Manage LogBot"
 )
 
-func BeforeServerBootstrapp(c core.Rail) error {
-	if e := bus.DeclareEventBus(ERROR_LOG_EVENT_BUS); e != nil {
+func BeforeServerBootstrapp(c miso.Rail) error {
+	if e := miso.NewEventBus(ERROR_LOG_EVENT_BUS); e != nil {
 		return e
 	}
 
-	bus.SubscribeEventBus(ERROR_LOG_EVENT_BUS, 2,
-		func(rail core.Rail, l LogLineEvent) error {
+	miso.SubEventBus(ERROR_LOG_EVENT_BUS, 2,
+		func(rail miso.Rail, l LogLineEvent) error {
 			return SaveErrorLog(rail, l)
 		})
 
 	// List error logs endpoint
-	server.IPost("/log/error/list", listErrorLogEp, goauth.PathDocExtra(goauth.PathDoc{Desc: "List error logs", Type: goauth.PT_PROTECTED, Code: RES_CODE}))
+	miso.IPost("/log/error/list", listErrorLogEp, goauth.PathDocExtra(goauth.PathDoc{Desc: "List error logs", Type: goauth.PT_PROTECTED, Code: RES_CODE}))
 
 	// report resources and paths if enabled
 	goauth.ReportResourcesOnBootstrapped(c, []goauth.AddResourceReq{
@@ -35,7 +32,7 @@ func BeforeServerBootstrapp(c core.Rail) error {
 	})
 
 	if IsRmErrorLogTaskEnabled() {
-		task.ScheduleNamedDistributedTask("0 0/1 * * ?", false, "RemoveErrorLogTask", func(ec core.Rail) error {
+		miso.ScheduleNamedDistributedTask("0 0/1 * * ?", false, "RemoveErrorLogTask", func(ec miso.Rail) error {
 			gap := 7 * 24 * time.Hour // seven days ago
 			return RemoveErrorLogsBefore(ec, time.Now().Add(-gap))
 		})
@@ -44,14 +41,14 @@ func BeforeServerBootstrapp(c core.Rail) error {
 	return nil
 }
 
-func listErrorLogEp(c *gin.Context, ec core.Rail, req ListErrorLogReq) (ListErrorLogResp, error) {
+func listErrorLogEp(c *gin.Context, ec miso.Rail, req ListErrorLogReq) (ListErrorLogResp, error) {
 	return ListErrorLogs(ec, req)
 }
 
-func AfterServerBootstrapped(rail core.Rail) error {
+func AfterServerBootstrapped(rail miso.Rail) error {
 	logBotConfig := LoadLogBotConfig().Config
 	for _, wc := range logBotConfig.WatchConfigs {
-		go func(w WatchConfig, nextRail core.Rail) {
+		go func(w WatchConfig, nextRail miso.Rail) {
 			if e := WatchLogFile(nextRail, w, logBotConfig.NodeName); e != nil {
 				nextRail.Errorf("WatchLogFile, app: %v, file: %v, %v", w.App, w.File, e)
 			}

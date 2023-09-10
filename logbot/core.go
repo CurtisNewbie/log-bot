@@ -12,11 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/curtisnewbie/miso/bus"
-	"github.com/curtisnewbie/miso/core"
-	"github.com/curtisnewbie/miso/mysql"
-	red "github.com/curtisnewbie/miso/redis"
-	"github.com/curtisnewbie/miso/server"
+	"github.com/curtisnewbie/miso/miso"
 	"github.com/go-redis/redis"
 	"gorm.io/gorm"
 )
@@ -31,11 +27,11 @@ var (
 )
 
 func init() {
-	core.SetDefProp("logbot.node", "default")
+	miso.SetDefProp("logbot.node", "default")
 }
 
-func lastPos(rail core.Rail, app string, nodeName string) (int64, error) {
-	cmd := red.GetRedis().Get(fmt.Sprintf("log-bot:pos:%v:%v", nodeName, app))
+func lastPos(rail miso.Rail, app string, nodeName string) (int64, error) {
+	cmd := miso.GetRedis().Get(fmt.Sprintf("log-bot:pos:%v:%v", nodeName, app))
 	if cmd.Err() != nil {
 		if errors.Is(cmd.Err(), redis.Nil) {
 			return 0, nil
@@ -53,13 +49,13 @@ func lastPos(rail core.Rail, app string, nodeName string) (int64, error) {
 	return int64(n), nil
 }
 
-func recPos(rail core.Rail, app string, nodeName string, pos int64) error {
+func recPos(rail miso.Rail, app string, nodeName string, pos int64) error {
 	posStr := strconv.FormatInt(pos, 10)
-	cmd := red.GetRedis().Set(fmt.Sprintf("log-bot:pos:%v:%v", nodeName, app), posStr, 0)
+	cmd := miso.GetRedis().Set(fmt.Sprintf("log-bot:pos:%v:%v", nodeName, app), posStr, 0)
 	return cmd.Err()
 }
 
-func WatchLogFile(rail core.Rail, wc WatchConfig, nodeName string) error {
+func WatchLogFile(rail miso.Rail, wc WatchConfig, nodeName string) error {
 	rail.Infof("Watching log file '%v' for app '%v'", wc.File, wc.App)
 	f, err := os.Open(wc.File)
 
@@ -217,7 +213,7 @@ func WatchLogFile(rail core.Rail, wc WatchConfig, nodeName string) error {
 			continue
 		}
 
-		if server.IsShuttingDown() {
+		if miso.IsShuttingDown() {
 			return nil
 		}
 	}
@@ -226,7 +222,7 @@ func WatchLogFile(rail core.Rail, wc WatchConfig, nodeName string) error {
 type LogLineEvent struct {
 	App     string
 	Node    string
-	Time    core.ETime
+	Time    miso.ETime
 	Level   string
 	TraceId string
 	SpanId  string
@@ -235,7 +231,7 @@ type LogLineEvent struct {
 }
 
 type LogLine struct {
-	Time    core.ETime
+	Time    miso.ETime
 	Level   string
 	TraceId string
 	SpanId  string
@@ -243,7 +239,7 @@ type LogLine struct {
 	Message string
 }
 
-func parseLogLine(c core.Rail, line string, typ string) (LogLine, error) {
+func parseLogLine(c miso.Rail, line string, typ string) (LogLine, error) {
 	var pat *regexp.Regexp
 	if typ == "java" {
 		pat = _javaLogPat
@@ -268,7 +264,7 @@ func parseLogLine(c core.Rail, line string, typ string) (LogLine, error) {
 	}
 
 	return LogLine{
-		Time:    core.ETime(time),
+		Time:    miso.ETime(time),
 		Level:   matches[2],
 		TraceId: strings.TrimSpace(matches[3]),
 		SpanId:  strings.TrimSpace(matches[4]),
@@ -277,11 +273,11 @@ func parseLogLine(c core.Rail, line string, typ string) (LogLine, error) {
 	}, nil
 }
 
-func reportLine(rail core.Rail, line LogLine, node string, wc WatchConfig) error {
+func reportLine(rail miso.Rail, line LogLine, node string, wc WatchConfig) error {
 	if line.Level != "ERROR" {
 		return nil
 	}
-	return bus.SendToEventBus(rail,
+	return miso.PubEventBus(rail,
 		LogLineEvent{
 			App:     wc.App,
 			Node:    node,
@@ -303,10 +299,10 @@ type SaveErrorLogCmd struct {
 	TraceId string
 	SpanId  string
 	ErrMsg  string
-	RTime   core.ETime `gorm:"column:rtime"`
+	RTime   miso.ETime `gorm:"column:rtime"`
 }
 
-func SaveErrorLog(rail core.Rail, evt LogLineEvent) error {
+func SaveErrorLog(rail miso.Rail, evt LogLineEvent) error {
 	el := SaveErrorLogCmd{
 		Node:    evt.Node,
 		App:     evt.App,
@@ -316,35 +312,35 @@ func SaveErrorLog(rail core.Rail, evt LogLineEvent) error {
 		ErrMsg:  evt.Message,
 		RTime:   evt.Time,
 	}
-	return mysql.GetConn().
+	return miso.GetMySQL().
 		Table("error_log").
 		Create(&el).
 		Error
 }
 
 type ListedErrorLog struct {
-	Id      int64        `json:"id"`
-	Node    string       `json:"node"`
-	App     string       `json:"app"`
-	Caller  string       `json:"caller"`
-	TraceId string       `json:"traceId"`
-	SpanId  string       `json:"spanId"`
-	ErrMsg  string       `json:"errMsg"`
-	RTime   core.ETime `json:"rtime" gorm:"column:rtime"`
+	Id      int64      `json:"id"`
+	Node    string     `json:"node"`
+	App     string     `json:"app"`
+	Caller  string     `json:"caller"`
+	TraceId string     `json:"traceId"`
+	SpanId  string     `json:"spanId"`
+	ErrMsg  string     `json:"errMsg"`
+	RTime   miso.ETime `json:"rtime" gorm:"column:rtime"`
 }
 
 type ListErrorLogReq struct {
-	App  string        `json:"app"`
-	Page core.Paging `json:"page"`
+	App  string      `json:"app"`
+	Page miso.Paging `json:"page"`
 }
 
 type ListErrorLogResp struct {
-	Page    core.Paging    `json:"page"`
+	Page    miso.Paging      `json:"page"`
 	Payload []ListedErrorLog `json:"payload"`
 }
 
-func newListErrorLogsQry(rail core.Rail, r ListErrorLogReq) *gorm.DB {
-	t := mysql.GetConn().
+func newListErrorLogsQry(rail miso.Rail, r ListErrorLogReq) *gorm.DB {
+	t := miso.GetMySQL().
 		Table("error_log")
 
 	if r.App != "" {
@@ -354,7 +350,7 @@ func newListErrorLogsQry(rail core.Rail, r ListErrorLogReq) *gorm.DB {
 	return t
 }
 
-func ListErrorLogs(rail core.Rail, r ListErrorLogReq) (ListErrorLogResp, error) {
+func ListErrorLogs(rail miso.Rail, r ListErrorLogReq) (ListErrorLogResp, error) {
 	var listed []ListedErrorLog
 	e := newListErrorLogsQry(rail, r).
 		Offset(r.Page.GetOffset()).
@@ -377,7 +373,7 @@ func ListErrorLogs(rail core.Rail, r ListErrorLogReq) (ListErrorLogResp, error) 
 	return ListErrorLogResp{Page: r.Page.ToRespPage(total), Payload: listed}, nil
 }
 
-func RemoveErrorLogsBefore(rail core.Rail, upperBound time.Time) error {
+func RemoveErrorLogsBefore(rail miso.Rail, upperBound time.Time) error {
 	rail.Infof("Remove error logs before %s", upperBound)
-	return mysql.GetConn().Exec("delete from error_log where rtime < ?", upperBound).Error
+	return miso.GetMySQL().Exec("delete from error_log where rtime < ?", upperBound).Error
 }
