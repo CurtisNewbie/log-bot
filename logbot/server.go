@@ -3,6 +3,7 @@ package logbot
 import (
 	"time"
 
+	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/gocommon/goauth"
 	"github.com/curtisnewbie/miso/miso"
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,8 @@ const (
 )
 
 func BeforeServerBootstrapp(c miso.Rail) error {
+	common.LoadBuiltinPropagationKeys()
+
 	if e := miso.NewEventBus(ERROR_LOG_EVENT_BUS); e != nil {
 		return e
 	}
