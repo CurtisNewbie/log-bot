@@ -1,0 +1,14 @@
+FROM alpine:3.17
+LABEL author="Yongjie Zhuang"
+LABEL descrption="Logbot that parses and monitor error logs"
+
+RUN apk --no-cache add tzdata
+
+WORKDIR /usr/src/
+
+# binary is pre-compiled
+COPY logbot_build ./app_logbot
+
+ENV TZ=Asia/Shanghai
+
+CMD ["./app_logbot", "configFile=/usr/src/config/app-conf-prod.yml"]
