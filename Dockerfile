@@ -25,4 +25,4 @@ COPY --from=build /go/src/build/main ./main
 COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
 ENV TZ=Asia/Shanghai
 
-CMD ["./main", "app.name=logbot", "profile=prod", "configFile=/usr/src/config/app-conf-prod.yml"]
+CMD ["./main", "app.name=logbot", "configFile=/usr/src/config/conf.yml"]

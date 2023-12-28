@@ -14,7 +14,7 @@ const (
 	RES_NAME = "Manage LogBot"
 )
 
-func BeforeServerBootstrapp(c miso.Rail) error {
+func BeforeServerBootstrapp(rail miso.Rail) error {
 	common.LoadBuiltinPropagationKeys()
 
 	if e := miso.NewEventBus(ERROR_LOG_EVENT_BUS); e != nil {
@@ -27,25 +27,30 @@ func BeforeServerBootstrapp(c miso.Rail) error {
 		})
 
 	// List error logs endpoint
-	miso.IPost("/log/error/list", listErrorLogEp, goauth.PathDocExtra(goauth.PathDoc{Desc: "List error logs", Type: goauth.PT_PROTECTED, Code: RES_CODE}))
+	miso.IPost("/log/error/list",
+		func(c *gin.Context, ec miso.Rail, req ListErrorLogReq) (any, error) {
+			return ListErrorLogs(ec, req)
+		}).
+		Extra(goauth.PathDocExtra(goauth.PathDoc{Desc: "List error logs", Type: goauth.PT_PROTECTED, Code: RES_CODE})).
+		Build()
 
 	// report resources and paths if enabled
-	goauth.ReportResourcesOnBootstrapped(c, []goauth.AddResourceReq{
+	goauth.ReportResourcesOnBootstrapped(rail, []goauth.AddResourceReq{
 		{Name: RES_NAME, Code: RES_CODE},
 	})
 
 	if IsRmErrorLogTaskEnabled() {
-		miso.ScheduleNamedDistributedTask("0 0/1 * * ?", false, "RemoveErrorLogTask", func(ec miso.Rail) error {
-			gap := 7 * 24 * time.Hour // seven days ago
-			return RemoveErrorLogsBefore(ec, time.Now().Add(-gap))
-		})
+		miso.ScheduleDistributedTask(miso.Job{
+			Cron:            "0 0/1 * * ?",
+			CronWithSeconds: false,
+			Name:            "RemoveErrorLogTask",
+			Run: func(ec miso.Rail) error {
+				gap := 7 * 24 * time.Hour // seven days ago
+				return RemoveErrorLogsBefore(ec, time.Now().Add(-gap))
+			}})
 	}
 
 	return nil
-}
-
-func listErrorLogEp(c *gin.Context, ec miso.Rail, req ListErrorLogReq) (ListErrorLogResp, error) {
-	return ListErrorLogs(ec, req)
 }
 
 func AfterServerBootstrapped(rail miso.Rail) error {

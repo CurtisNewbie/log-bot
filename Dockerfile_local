@@ -11,4 +11,4 @@ COPY logbot_build ./app_logbot
 
 ENV TZ=Asia/Shanghai
 
-CMD ["./app_logbot", "configFile=/usr/src/config/app-conf-prod.yml"]
+CMD ["./app_logbot", "configFile=/usr/src/config/conf.yml"]
