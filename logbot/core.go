@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	ERROR_LOG_EVENT_BUS = "logbot.log.error"
+	ERROR_LOG_EVENT_BUS = "event.bus.logbot.log.error"
 )
 
 var (
