@@ -17,10 +17,6 @@ const (
 func BeforeServerBootstrapp(rail miso.Rail) error {
 	common.LoadBuiltinPropagationKeys()
 
-	if e := miso.NewEventBus(ERROR_LOG_EVENT_BUS); e != nil {
-		return e
-	}
-
 	miso.SubEventBus(ERROR_LOG_EVENT_BUS, 2,
 		func(rail miso.Rail, l LogLineEvent) error {
 			return SaveErrorLog(rail, l)
