@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	RES_CODE = "manage-logbot"
-	RES_NAME = "Manage LogBot"
+	ResourceManageLogbot = "manage-logbot"
 )
 
 func BeforeServerBootstrapp(rail miso.Rail) error {
@@ -27,12 +26,13 @@ func BeforeServerBootstrapp(rail miso.Rail) error {
 		func(c *gin.Context, ec miso.Rail, req ListErrorLogReq) (any, error) {
 			return ListErrorLogs(ec, req)
 		}).
-		Extra(goauth.PathDocExtra(goauth.PathDoc{Desc: "List error logs", Type: goauth.PT_PROTECTED, Code: RES_CODE})).
+		Desc("List error logs").
+		Resource(ResourceManageLogbot).
 		Build()
 
 	// report resources and paths if enabled
-	goauth.ReportResourcesOnBootstrapped(rail, []goauth.AddResourceReq{
-		{Name: RES_NAME, Code: RES_CODE},
+	goauth.ReportOnBoostrapped(rail, []goauth.AddResourceReq{
+		{Name: "Manage LogBot", Code: ResourceManageLogbot},
 	})
 
 	if IsRmErrorLogTaskEnabled() {
