@@ -37,13 +37,6 @@ rabbitmq:
   password: "${rabbitmqpassword}"
   vhost: "/"
 
-tracing.propagation.keys:
-  - id
-  - userno
-  - username
-  - role
-  - roleno
-
 logging.rolling.file: "/usr/src/logs/${app.name}.log"
 
 logbot:

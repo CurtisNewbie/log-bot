@@ -32,13 +32,6 @@ rabbitmq:
   password: guest
   vhost: "/"
 
-tracing.propagation.keys:
-  - id
-  - userno
-  - username
-  - role
-  - roleno
-
 logbot:
   node: node1
   watch:
