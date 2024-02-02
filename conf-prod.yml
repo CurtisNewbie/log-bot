@@ -68,5 +68,3 @@ logbot:
       file: /usr/src/logs/watch/auth-service.log
 
 task.remove-error-log: true
-
-goauth.report.enabled: true

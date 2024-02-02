@@ -41,6 +41,3 @@ logbot:
     - app: auth-service
       file: ../auth-service/auth-service/logs/auth-service.log
       type: java
-
-
-goauth.client.enabled: false
