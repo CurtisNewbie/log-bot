@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/curtisnewbie/miso/miso"
+	postbox "github.com/curtisnewbie/postbox/api"
 	"github.com/go-redis/redis"
 	"gorm.io/gorm"
 )
@@ -25,7 +26,7 @@ var (
 	_goLogPat   = regexp.MustCompile(`^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[([\w ]+),([\w ]+)\] ([\w\.]+) +: *((?s).*)`)
 	_javaLogPat = regexp.MustCompile(`^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[[\w \-]+,([\w ]*),([\w ]*),[\w ]*\] [\w\.]+ \-\-\- \[[\w\- ]+\] ([\w\-\.]+) +: *((?s).*)`)
 
-	lineCache   = miso.NewTTLCache[string](time.Second*10, 1000)
+	lineCache   = miso.NewTTLCache[string](time.Second*5, 1000)
 	noopElseGet = func() (string, bool) { return "", false }
 )
 
@@ -325,10 +326,24 @@ func SaveErrorLog(rail miso.Rail, evt LogLineEvent) error {
 		ErrMsg:  evt.Message,
 		RTime:   evt.Time,
 	}
-	return miso.GetMySQL().
+	err := miso.GetMySQL().
 		Table("error_log").
 		Create(&el).
 		Error
+
+	if err == nil {
+		adminUserNos := miso.GetPropStrSlice("admin.user-no")
+		if len(adminUserNos) > 0 {
+			if cerr := postbox.CreateNotification(rail, postbox.CreateNotificationReq{
+				Title:           fmt.Sprintf("Logbot - %s has error", evt.App),
+				Message:         fmt.Sprintf("%s [%s,%s] %s : %s", evt.Time.FormatClassic(), evt.TraceId, evt.SpanId, evt.Caller, evt.Message),
+				ReceiverUserNos: adminUserNos,
+			}); cerr != nil {
+				rail.Errorf("failed to create platform notification, %v", cerr)
+			}
+		}
+	}
+	return err
 }
 
 type ListedErrorLog struct {

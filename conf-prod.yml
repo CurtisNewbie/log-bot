@@ -54,17 +54,18 @@ logbot:
     - app: mini-fstore
       type: go
       file: /usr/src/logs/watch/mini-fstore.log
-    - app: dtaskgo
-      type: go
-      file: /usr/src/logs/watch/dtaskgo.log
-    - app: fantahsea
-      type: go
-      file: /usr/src/logs/watch/fantahsea.log
-    - app: auth-gateway
-      type: java
-      file: /usr/src/logs/watch/auth-gateway.log
-    - app: auth-service
-      type: java
-      file: /usr/src/logs/watch/auth-service.log
+
+    # - app: dtaskgo
+    #   type: go
+    #   file: /usr/src/logs/watch/dtaskgo.log
+    # - app: fantahsea
+    #   type: go
+    #   file: /usr/src/logs/watch/fantahsea.log
+    # - app: auth-gateway
+    #   type: java
+    #   file: /usr/src/logs/watch/auth-gateway.log
+    # - app: auth-service
+    #   type: java
+    #   file: /usr/src/logs/watch/auth-service.log
 
 task.remove-error-log: true

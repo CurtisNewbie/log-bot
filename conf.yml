@@ -41,3 +41,22 @@ logbot:
     - app: user-vault
       file: ../user-vault/logs/user-vault.log
       type: go
+    - app: vfm 
+      file: ../vfm/logs/vfm.log
+      type: go
+    - app: mini-fstore 
+      file: ../mini-fstore/logs/fstore.log
+      type: go
+    - app: hammer 
+      file: ../hammer/logs/hammer.log
+      type: go
+    - app: event-pump 
+      file: ../event-pump/logs/event-pump.log
+      type: go
+    - app: gatekeeper 
+      file: ../gatekeeper/logs/gatekeeper.log
+      type: go
+    
+admin:
+  user-no:
+    - "UE1049787455160320075953"

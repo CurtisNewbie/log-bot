@@ -75,6 +75,8 @@ github.com/curtisnewbie/gocommon v1.1.9 h1:PFUqFhnh+b7bMTqYqrz+zLpkLvI6Tju6u0e3a
 github.com/curtisnewbie/gocommon v1.1.9/go.mod h1:S+ndKdPEjHKpMiLeuRELLXkDRlERGcDoidhciMCjJHg=
 github.com/curtisnewbie/miso v0.0.21 h1:Q6HW/2ykMOSTwwr7Tsk1enGXoRvHd8wZYvZsTVfYCYI=
 github.com/curtisnewbie/miso v0.0.21/go.mod h1:Zi7PRDlKs4OjBucIFBHoupgImuqXZvy0VoNWZdQnT9A=
+github.com/curtisnewbie/postbox v0.0.1 h1:xjjx6Osh9YNmHEyVn8lv3oPG/I9DXjfrPDEFZc2Y9ac=
+github.com/curtisnewbie/postbox v0.0.1/go.mod h1:QfzyRgx+S+DB5gLG5a4jvaR0lB6v5Mj7VyuLjL9D864=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -308,7 +310,7 @@ github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjY
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
 github.com/natefinch/lumberjack v2.0.0+incompatible h1:4QJd3OLAMgj7ph+yZTuX13Ld4UpgHp07nNdFX7mqFfM=
 github.com/natefinch/lumberjack v2.0.0+incompatible/go.mod h1:Wi9p2TTF5DG5oU+6YfsmYQpsTIOm0B1VNzQg9Mw6nPk=
-github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
+github.com/nxadm/tail v1.4.11 h1:8feyoE3OzPrcshW5/MJ4sGESc5cqmGkGCWlco4l0bqY=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.8.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.16.5 h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=
