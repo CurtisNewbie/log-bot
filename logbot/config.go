@@ -3,11 +3,11 @@ package logbot
 import "github.com/curtisnewbie/miso/miso"
 
 const (
-	PROP_ENABLE_REMOVE_ERR_LOG_TASK = "miso.remove-error-log"
+	PropEnableRemoveErrLogTask = "logbot.remove-history-error-log"
 )
 
 func init() {
-	miso.SetDefProp(PROP_ENABLE_REMOVE_ERR_LOG_TASK, false)
+	miso.SetDefProp(PropEnableRemoveErrLogTask, false)
 }
 
 type WatchConfig struct {
@@ -32,5 +32,5 @@ func LoadLogBotConfig() Config {
 }
 
 func IsRmErrorLogTaskEnabled() bool {
-	return miso.GetPropBool(PROP_ENABLE_REMOVE_ERR_LOG_TASK)
+	return miso.GetPropBool(PropEnableRemoveErrLogTask)
 }

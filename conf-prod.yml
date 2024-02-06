@@ -29,6 +29,13 @@ consul:
   consulAddress: consul:8500
   healthCheckUrl: /health
 
+logging.rolling.file: "/usr/src/logs/${app.name}.log"
+
+log:
+  pattern:
+    go: '^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[([\w ]+),([\w ]+)\] ([\w\.]+) +: *((?s).*)'
+    java: '^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[[\w \-]+,([\w ]*),([\w ]*),[\w ]*\] [\w\.]+ \-\-\- \[[\w\- ]+\] ([\w\-\.]+) +: *((?s).*)'
+
 rabbitmq:
   enabled: true
   host: "rabbitmq"
@@ -36,8 +43,6 @@ rabbitmq:
   username: "${rabbitmqusername}"
   password: "${rabbitmqpassword}"
   vhost: "/"
-
-logging.rolling.file: "/usr/src/logs/${app.name}.log"
 
 logbot:
   node: docker-compose-1
@@ -54,18 +59,3 @@ logbot:
     - app: mini-fstore
       type: go
       file: /usr/src/logs/watch/mini-fstore.log
-
-    # - app: dtaskgo
-    #   type: go
-    #   file: /usr/src/logs/watch/dtaskgo.log
-    # - app: fantahsea
-    #   type: go
-    #   file: /usr/src/logs/watch/fantahsea.log
-    # - app: auth-gateway
-    #   type: java
-    #   file: /usr/src/logs/watch/auth-gateway.log
-    # - app: auth-service
-    #   type: java
-    #   file: /usr/src/logs/watch/auth-service.log
-
-task.remove-error-log: true

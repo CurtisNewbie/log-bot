@@ -23,11 +23,9 @@ const (
 )
 
 var (
-	_goLogPat   = regexp.MustCompile(`^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[([\w ]+),([\w ]+)\] ([\w\.]+) +: *((?s).*)`)
-	_javaLogPat = regexp.MustCompile(`^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[[\w \-]+,([\w ]*),([\w ]*),[\w ]*\] [\w\.]+ \-\-\- \[[\w\- ]+\] ([\w\-\.]+) +: *((?s).*)`)
-
-	lineCache   = miso.NewTTLCache[string](time.Second*5, 1000)
-	noopElseGet = func() (string, bool) { return "", false }
+	logPatternCache = miso.NewLocalCache[*regexp.Regexp]()
+	lineCache       = miso.NewTTLCache[string](time.Second*5, 1000)
+	noopElseGet     = func() (string, bool) { return "", false }
 )
 
 func init() {
@@ -243,13 +241,12 @@ type LogLine struct {
 	Message string
 }
 
-func parseLogLine(c miso.Rail, line string, typ string) (LogLine, error) {
-	var pat *regexp.Regexp
-	if typ == "java" {
-		pat = _javaLogPat
-	} else {
-		pat = _goLogPat
-	}
+func parseLogLine(rail miso.Rail, line string, typ string) (LogLine, error) {
+	patType := miso.GetPropStr("log.pattern." + typ)
+	pat, _ := logPatternCache.Get(patType, func(s string) (*regexp.Regexp, error) {
+		return regexp.MustCompile(s), nil
+	})
+
 	matches := pat.FindStringSubmatch(line)
 	if matches == nil {
 		return LogLine{}, fmt.Errorf("doesn't match pattern")
