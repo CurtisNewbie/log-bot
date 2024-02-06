@@ -18,12 +18,15 @@ import (
 )
 
 const (
-	ERROR_LOG_EVENT_BUS = "event.bus.logbot.log.error"
+	ErrorLogEventBus = "event.bus.logbot.log.error"
 )
 
 var (
 	_goLogPat   = regexp.MustCompile(`^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[([\w ]+),([\w ]+)\] ([\w\.]+) +: *((?s).*)`)
 	_javaLogPat = regexp.MustCompile(`^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[[\w \-]+,([\w ]*),([\w ]*),[\w ]*\] [\w\.]+ \-\-\- \[[\w\- ]+\] ([\w\-\.]+) +: *((?s).*)`)
+
+	lineCache   = miso.NewTTLCache[string](time.Second*10, 1000)
+	noopElseGet = func() (string, bool) { return "", false }
 )
 
 func init() {
@@ -277,6 +280,16 @@ func reportLine(rail miso.Rail, line LogLine, node string, wc WatchConfig) error
 	if line.Level != "ERROR" {
 		return nil
 	}
+
+	// prevent reporting same error message way too frequently
+	if len(line.Message) < 2048 {
+		_, ok := lineCache.Get(line.Message, noopElseGet)
+		if ok {
+			return nil
+		}
+		lineCache.Put(line.Message, "1") // race condition is fine
+	}
+
 	return miso.PubEventBus(rail,
 		LogLineEvent{
 			App:     wc.App,
@@ -288,7 +301,7 @@ func reportLine(rail miso.Rail, line LogLine, node string, wc WatchConfig) error
 			Caller:  line.Caller,
 			Message: line.Message,
 		},
-		ERROR_LOG_EVENT_BUS,
+		ErrorLogEventBus,
 	)
 }
 
