@@ -13,15 +13,16 @@ Bot for watching and parsing logs.
 
 For more configuration, check [miso](https://github.com/CurtisNewbie/miso).
 
-| Property                        | Description                                                    | Default Value |
-|---------------------------------|----------------------------------------------------------------|---------------|
-| logbot.node                     | name of the node                                               | 'default'     |
-| logbot.[]watch                  | list of watch config                                           |               |
-| logbot.[]watch.app              | app name                                                       |               |
-| logbot.[]watch.file             | path of the log file                                           |               |
-| logbot.[]watch.type             | type of log pattern [ 'go', 'java' ]                           | 'go'          |
-| logbot.remove-history-error-log | enable task to remove error logs reported 7 days ago           | false         |
-| log.pattern[]                   | log pattern supported (regexp), e.g., `log.pattern.go : "..."` |               |
+| Property                        | Description                                                                                                                                    | Default Value |
+|---------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| logbot.node                     | name of the node                                                                                                                               | 'default'     |
+| logbot.[]watch                  | list of watch config                                                                                                                           |               |
+| logbot.[]watch.app              | app name                                                                                                                                       |               |
+| logbot.[]watch.file             | path of the log file                                                                                                                           |               |
+| logbot.[]watch.type             | type of log pattern [ 'go', 'java' ]                                                                                                           | 'go'          |
+| logbot.remove-history-error-log | enable task to remove error logs reported 7 days ago                                                                                           | false         |
+| log.[]pattern                   | log pattern supported (regexp)                                                                                                                 |               |
+| admin.[]user-nos                | user_no of administrators, if configured, logbot will request `postbox` to create platform notification to these users about the error message |               |
 
 ## API
 
