@@ -36,8 +36,8 @@ logbot:
   node: node1
   watch:
     - app: goauth
-      file: ../goauth/goauth/goauth.log
+      file: ../goauth/logs/goauth.log
       type: go
-    - app: auth-service
-      file: ../auth-service/auth-service/logs/auth-service.log
-      type: java
+    - app: user-vault
+      file: ../user-vault/logs/user-vault.log
+      type: go
