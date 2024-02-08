@@ -59,3 +59,18 @@ logbot:
     - app: mini-fstore
       type: go
       file: /usr/src/logs/watch/mini-fstore.log
+    - app: postbox
+      type: go
+      file: /usr/src/logs/watch/postbox.log
+    - app: user-vault
+      type: go
+      file: /usr/src/logs/watch/user-vault.log
+    - app: event-pump
+      type: go
+      file: /usr/src/logs/watch/event-pump.log
+    - app: gatekeeper
+      type: go
+      file: /usr/src/logs/watch/gatekeeper.log
+    - app: docindexer
+      type: go
+      file: /usr/src/logs/watch/docindexer.log

@@ -8,6 +8,7 @@ Bot for watching and parsing logs.
 - Redis
 - Consul
 - RabbitMQ
+- [github.com/curtisnewbie/postbox](https://github.com/curtisnewbie/postbox)
 
 ## Configuration
 
