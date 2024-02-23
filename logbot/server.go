@@ -3,10 +3,9 @@ package logbot
 import (
 	"time"
 
+	"github.com/curtisnewbie/gocommon/auth"
 	"github.com/curtisnewbie/gocommon/common"
-	"github.com/curtisnewbie/gocommon/goauth"
 	"github.com/curtisnewbie/miso/miso"
-	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -15,25 +14,21 @@ const (
 
 func BeforeServerBootstrapp(rail miso.Rail) error {
 	common.LoadBuiltinPropagationKeys()
+	auth.ExposeResourceInfo([]auth.Resource{
+		{Name: "Manage LogBot", Code: ResourceManageLogbot},
+	})
 
 	miso.SubEventBus(ErrorLogEventBus, 2,
 		func(rail miso.Rail, l LogLineEvent) error {
 			return SaveErrorLog(rail, l)
 		})
 
-	// List error logs endpoint
 	miso.IPost("/log/error/list",
-		func(c *gin.Context, ec miso.Rail, req ListErrorLogReq) (any, error) {
-			return ListErrorLogs(ec, req)
+		func(inb *miso.Inbound, req ListErrorLogReq) (any, error) {
+			return ListErrorLogs(inb.Rail(), req)
 		}).
 		Desc("List error logs").
-		Resource(ResourceManageLogbot).
-		Build()
-
-	// report resources and paths if enabled
-	goauth.ReportOnBoostrapped(rail, []goauth.AddResourceReq{
-		{Name: "Manage LogBot", Code: ResourceManageLogbot},
-	})
+		Resource(ResourceManageLogbot)
 
 	if IsRmErrorLogTaskEnabled() {
 		miso.ScheduleDistributedTask(miso.Job{

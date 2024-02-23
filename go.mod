@@ -3,10 +3,9 @@ module github.com/curtisnewbie/log-bot
 go 1.18
 
 require (
-	github.com/curtisnewbie/gocommon v1.1.9
-	github.com/curtisnewbie/miso v0.0.21
+	github.com/curtisnewbie/gocommon v1.1.12-0.20240223134353-f6e3789e77da
+	github.com/curtisnewbie/miso v0.0.26-beta.3
 	github.com/curtisnewbie/postbox v0.0.1
-	github.com/gin-gonic/gin v1.8.1
 	github.com/go-redis/redis v6.15.9+incompatible
 	gorm.io/gorm v1.23.8
 )
@@ -19,6 +18,7 @@ require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
+	github.com/gin-gonic/gin v1.8.1 // indirect
 	github.com/go-co-op/gocron v1.17.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
