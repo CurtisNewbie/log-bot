@@ -41,6 +41,8 @@ func BeforeServerBootstrapp(rail miso.Rail) error {
 			}})
 	}
 
+	InitPipeline(rail)
+
 	return nil
 }
 

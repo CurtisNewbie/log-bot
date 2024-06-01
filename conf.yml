@@ -36,32 +36,32 @@ log:
   pattern:
     go: '^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[([\w ]+),([\w ]+)\] ([\w\.]+) +: *((?s).*)'
     java: '^([0-9]{4}\-[0-9]{2}\-[0-9]{2} [0-9:\.]+) +(\w+) +\[[\w \-]+,([\w ]*),([\w ]*),[\w ]*\] [\w\.]+ \-\-\- \[[\w\- ]+\] ([\w\-\.]+) +: *((?s).*)'
- 
-logbot:
-  node: node1
-  watch:
-    - app: goauth
-      file: ../goauth/logs/goauth.log
-      type: go
-    - app: user-vault
-      file: ../user-vault/logs/user-vault.log
-      type: go
-    - app: vfm 
-      file: ../vfm/logs/vfm.log
-      type: go
-    - app: mini-fstore 
-      file: ../mini-fstore/logs/fstore.log
-      type: go
-    - app: hammer 
-      file: ../hammer/logs/hammer.log
-      type: go
-    - app: event-pump 
-      file: ../event-pump/logs/event-pump.log
-      type: go
-    - app: gatekeeper 
-      file: ../gatekeeper/logs/gatekeeper.log
-      type: go
-    
+
+# logbot:
+#   node: node1
+#   watch:
+#     - app: goauth
+#       file: ../goauth/logs/goauth.log
+#       type: go
+#     - app: user-vault
+#       file: ../user-vault/logs/user-vault.log
+#       type: go
+#     - app: vfm
+#       file: ../vfm/logs/vfm.log
+#       type: go
+#     - app: mini-fstore
+#       file: ../mini-fstore/logs/fstore.log
+#       type: go
+#     - app: hammer
+#       file: ../hammer/logs/hammer.log
+#       type: go
+#     - app: event-pump
+#       file: ../event-pump/logs/event-pump.log
+#       type: go
+#     - app: gatekeeper
+#       file: ../gatekeeper/logs/gatekeeper.log
+#       type: go
+
 admin:
   user-no:
     - "UE1049787455160320075953"
