@@ -3,6 +3,7 @@ package logbot
 import (
 	"time"
 
+	"github.com/curtisnewbie/miso/middleware/logbot"
 	"github.com/curtisnewbie/miso/middleware/user-vault/auth"
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
@@ -12,8 +13,11 @@ const (
 	ResourceManageLogbot = "manage-logbot"
 )
 
-func BeforeServerBootstrapp(rail miso.Rail) error {
+func BeforeServerBootstrap(rail miso.Rail) error {
+
+	logbot.EnableLogbotErrLogReport()
 	common.LoadBuiltinPropagationKeys()
+
 	auth.ExposeResourceInfo([]auth.Resource{
 		{Name: "Manage LogBot", Code: ResourceManageLogbot},
 	})

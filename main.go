@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	miso.PreServerBootstrap(logbot.BeforeServerBootstrapp)
+	miso.PreServerBootstrap(logbot.BeforeServerBootstrap)
 	miso.PostServerBootstrapped(logbot.AfterServerBootstrapped)
 	miso.BootstrapServer(os.Args)
 }
