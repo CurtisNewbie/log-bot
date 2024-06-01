@@ -44,9 +44,13 @@ rabbitmq:
   password: "${rabbitmqpassword}"
   vhost: "/"
 
-# logbot:
-#   node: docker-compose-1
-#   watch:
+logbot:
+  node: docker-compose-1
+  watch:
+    - app: event-pump
+      type: go
+      file: /usr/src/logs/watch/event-pump.log
+
 #     - app: goauth
 #       type: go
 #       file: /usr/src/logs/watch/goauth.log
@@ -65,9 +69,6 @@ rabbitmq:
 #     - app: user-vault
 #       type: go
 #       file: /usr/src/logs/watch/user-vault.log
-#     - app: event-pump
-#       type: go
-#       file: /usr/src/logs/watch/event-pump.log
 #     - app: gatekeeper
 #       type: go
 #       file: /usr/src/logs/watch/gatekeeper.log
