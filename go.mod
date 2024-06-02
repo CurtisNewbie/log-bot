@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/curtisnewbie/miso v0.0.33-beta.3
-	github.com/curtisnewbie/user-vault v0.0.22-0.20240602163838-94967b8b423c
+	github.com/curtisnewbie/user-vault v0.0.22-0.20240602164525-fc5771d597fe
 	github.com/go-redis/redis v6.15.9+incompatible
 	gorm.io/gorm v1.23.8
 )
