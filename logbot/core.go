@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/curtisnewbie/miso/miso"
-	postbox "github.com/curtisnewbie/postbox/api"
+	uvault "github.com/curtisnewbie/user-vault/api"
 	"github.com/go-redis/redis"
 	"gorm.io/gorm"
 )
@@ -331,7 +331,7 @@ func SaveErrorLog(rail miso.Rail, evt LogLineEvent) error {
 	if err == nil {
 		adminUserNos := miso.GetPropStrSlice("admin.user-no")
 		if len(adminUserNos) > 0 {
-			if cerr := postbox.CreateNotification(rail, postbox.CreateNotificationReq{
+			if cerr := uvault.CreateNotification(rail, uvault.CreateNotificationReq{
 				Title:           fmt.Sprintf("Logbot - %s has error", evt.App),
 				Message:         fmt.Sprintf("%s [%s,%s] %s : %s", evt.Time.FormatClassic(), evt.TraceId, evt.SpanId, evt.Caller, evt.Message),
 				ReceiverUserNos: adminUserNos,
