@@ -76,6 +76,6 @@ logbot:
 #       type: go
 #       file: /usr/src/logs/watch/docindexer.log
 
-admin:
-  user-no:
-    - "UE202205142344122020573"
+# admin:
+#   user-no:
+#     - "UE202205142344122020573"

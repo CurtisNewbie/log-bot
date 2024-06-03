@@ -3,8 +3,8 @@ module github.com/curtisnewbie/log-bot
 go 1.18
 
 require (
-	github.com/curtisnewbie/miso v0.0.33-beta.3
-	github.com/curtisnewbie/user-vault v0.0.22-0.20240602164525-fc5771d597fe
+	github.com/curtisnewbie/miso v0.0.33-beta.3.0.20240602153453-3d1eb4474c5b
+	github.com/curtisnewbie/user-vault v0.0.22-0.20240603093737-7a0fb5a10b7a
 	github.com/go-redis/redis v6.15.9+incompatible
 	gorm.io/gorm v1.23.8
 )
@@ -48,7 +48,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
-	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/prometheus/client_golang v1.4.0 // indirect

@@ -62,6 +62,6 @@ log:
 #       file: ../gatekeeper/logs/gatekeeper.log
 #       type: go
 
-admin:
-  user-no:
-    - "UE1049787455160320075953"
+# admin:
+#   user-no:
+#     - "UE1049787455160320075953"
