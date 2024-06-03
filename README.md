@@ -15,7 +15,7 @@ Bot for watching and parsing logs.
 For more configuration, check [miso](https://github.com/CurtisNewbie/miso).
 
 | Property                        | Description                                                                                                                                    | Default Value |
-|---------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | logbot.node                     | name of the node                                                                                                                               | 'default'     |
 | logbot.[]watch                  | list of watch config                                                                                                                           |               |
 | logbot.[]watch.app              | app name                                                                                                                                       |               |
@@ -25,12 +25,9 @@ For more configuration, check [miso](https://github.com/CurtisNewbie/miso).
 | log.[]pattern                   | log pattern supported (regexp)                                                                                                                 |               |
 | admin.[]user-nos                | user_no of administrators, if configured, logbot will request `postbox` to create platform notification to these users about the error message |               |
 
-## API
+## Documentation
 
-
-| Method | Path              | Parameters                                                        | Description               |
-|--------|-------------------|-------------------------------------------------------------------|---------------------------|
-| POST   | `/log/error/list` | `{ "app" : "app_name" , "page" : { "limit" : 10, "page"  : 1 } }` | List ERROR logs collected |
+- [Api Doc](./doc/api.md)
 
 ## Log Pattern
 
@@ -58,9 +55,9 @@ With `java` pattern, the logs looks like this:
 
 The pattern provided will need to match following groups:
 
-1. time that matches `2006-01-02 15:04:05.000` 
+1. time that matches `2006-01-02 15:04:05.000`
 2. log level
 3. trace id
 4. span id
-5. name of the method 
-6. log content 
+5. name of the method
+6. log content
