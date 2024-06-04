@@ -8,7 +8,7 @@ Bot for watching and parsing logs.
 - Redis
 - Consul
 - RabbitMQ
-- [github.com/curtisnewbie/postbox](https://github.com/curtisnewbie/postbox)
+- [github.com/curtisnewbie/user-vault](https://github.com/curtisnewbie/user-vault)
 
 ## Configuration
 
@@ -23,7 +23,6 @@ For more configuration, check [miso](https://github.com/CurtisNewbie/miso).
 | logbot.[]watch.type             | type of log pattern [ 'go', 'java' ]                                                                                                           | 'go'          |
 | logbot.remove-history-error-log | enable task to remove error logs reported 7 days ago                                                                                           | false         |
 | log.[]pattern                   | log pattern supported (regexp)                                                                                                                 |               |
-| admin.[]user-nos                | user_no of administrators, if configured, logbot will request `postbox` to create platform notification to these users about the error message |               |
 
 ## Documentation
 
