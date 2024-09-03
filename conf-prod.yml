@@ -4,15 +4,15 @@ app.name: "logbot"
 
 mysql:
   enabled: true
-  user: "${mysqlusername}"
-  password: "${mysqlpassword}"
+  user: "${MYSQL_USERNAME}"
+  password: "${MYSQL_PASSWORD}"
   database: "logbot"
-  host: "${mysqladdr}"
+  host: "${MYSQL_HOST}"
   port: 3306
 
 redis:
   enabled: true
-  address: "redis"
+  address: "${REDIS_ADDR}"
   port: 6379
   username:
   password:
@@ -26,7 +26,7 @@ server:
 
 consul:
   enabled: true
-  consulAddress: consul:8500
+  consulAddress: "${CONSUL_HOST}:8500"
   healthCheckUrl: /health
 
 logging.rolling.file: "/usr/src/logs/${app.name}.log"
@@ -38,10 +38,10 @@ log:
 
 rabbitmq:
   enabled: true
-  host: "rabbitmq"
+  host: "${RABBITMQ_ADDR}"
   port: 5672
-  username: "${rabbitmqusername}"
-  password: "${rabbitmqpassword}"
+  username: "${RABBITMQ_USERNAME}"
+  password: "${RABBITMQ_PASSWORD}"
   vhost: "/"
 
 logbot:
@@ -50,32 +50,3 @@ logbot:
     - app: event-pump
       type: go
       file: /usr/src/logs/watch/event-pump.log
-
-#     - app: goauth
-#       type: go
-#       file: /usr/src/logs/watch/goauth.log
-#     - app: hammer
-#       type: go
-#       file: /usr/src/logs/watch/hammer.log
-#     - app: vfm
-#       type: go
-#       file: /usr/src/logs/watch/vfm.log
-#     - app: mini-fstore
-#       type: go
-#       file: /usr/src/logs/watch/mini-fstore.log
-#     - app: postbox
-#       type: go
-#       file: /usr/src/logs/watch/postbox.log
-#     - app: user-vault
-#       type: go
-#       file: /usr/src/logs/watch/user-vault.log
-#     - app: gatekeeper
-#       type: go
-#       file: /usr/src/logs/watch/gatekeeper.log
-#     - app: docindexer
-#       type: go
-#       file: /usr/src/logs/watch/docindexer.log
-
-# admin:
-#   user-no:
-#     - "UE202205142344122020573"
