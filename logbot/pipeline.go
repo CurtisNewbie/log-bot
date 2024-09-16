@@ -1,11 +1,15 @@
 package logbot
 
-import "github.com/curtisnewbie/miso/miso"
+import (
+	"github.com/curtisnewbie/miso/middleware/rabbit"
+	"github.com/curtisnewbie/miso/miso"
+	"github.com/curtisnewbie/miso/util"
+)
 
 type ErrorLog struct {
 	Node     string
 	App      string
-	Time     miso.ETime
+	Time     util.ETime
 	TraceId  string
 	SpanId   string
 	FuncName string
@@ -13,7 +17,7 @@ type ErrorLog struct {
 }
 
 var (
-	ReportLogPipeline = miso.NewEventPipeline[ErrorLog]("logbot:error-log:report:pipeline").
+	ReportLogPipeline = rabbit.NewEventPipeline[ErrorLog]("logbot:error-log:report:pipeline").
 		LogPayload()
 )
 

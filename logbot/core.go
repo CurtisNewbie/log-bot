@@ -12,9 +12,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/curtisnewbie/miso/middleware/mysql"
+	"github.com/curtisnewbie/miso/middleware/rabbit"
+	"github.com/curtisnewbie/miso/middleware/redis"
 	"github.com/curtisnewbie/miso/miso"
+	"github.com/curtisnewbie/miso/util"
 	uvault "github.com/curtisnewbie/user-vault/api"
-	"github.com/go-redis/redis"
+	red "github.com/go-redis/redis"
 	"gorm.io/gorm"
 )
 
@@ -33,9 +37,9 @@ func init() {
 }
 
 func lastPos(rail miso.Rail, app string, nodeName string) (int64, error) {
-	cmd := miso.GetRedis().Get(fmt.Sprintf("log-bot:pos:%v:%v", nodeName, app))
+	cmd := redis.GetRedis().Get(fmt.Sprintf("log-bot:pos:%v:%v", nodeName, app))
 	if cmd.Err() != nil {
-		if errors.Is(cmd.Err(), redis.Nil) {
+		if errors.Is(cmd.Err(), red.Nil) {
 			return 0, nil
 		}
 		return 0, cmd.Err()
@@ -53,7 +57,7 @@ func lastPos(rail miso.Rail, app string, nodeName string) (int64, error) {
 
 func recPos(rail miso.Rail, app string, nodeName string, pos int64) error {
 	posStr := strconv.FormatInt(pos, 10)
-	cmd := miso.GetRedis().Set(fmt.Sprintf("log-bot:pos:%v:%v", nodeName, app), posStr, 0)
+	cmd := redis.GetRedis().Set(fmt.Sprintf("log-bot:pos:%v:%v", nodeName, app), posStr, 0)
 	return cmd.Err()
 }
 
@@ -224,7 +228,7 @@ func WatchLogFile(rail miso.Rail, wc WatchConfig, nodeName string) error {
 type LogLineEvent struct {
 	App     string
 	Node    string
-	Time    miso.ETime
+	Time    util.ETime
 	Level   string
 	TraceId string
 	SpanId  string
@@ -233,7 +237,7 @@ type LogLineEvent struct {
 }
 
 type LogLine struct {
-	Time    miso.ETime
+	Time    util.ETime
 	Level   string
 	TraceId string
 	SpanId  string
@@ -265,7 +269,7 @@ func parseLogLine(rail miso.Rail, line string, typ string) (LogLine, error) {
 	}
 
 	return LogLine{
-		Time:    miso.ETime(time),
+		Time:    util.ToETime(time),
 		Level:   matches[2],
 		TraceId: strings.TrimSpace(matches[3]),
 		SpanId:  strings.TrimSpace(matches[4]),
@@ -288,7 +292,7 @@ func reportLine(rail miso.Rail, line LogLine, node string, wc WatchConfig) error
 		lineCache.Put(line.Message, "1") // race condition is fine
 	}
 
-	return miso.PubEventBus(rail,
+	return rabbit.PubEventBus(rail,
 		LogLineEvent{
 			App:     wc.App,
 			Node:    node,
@@ -310,7 +314,7 @@ type SaveErrorLogCmd struct {
 	TraceId string
 	SpanId  string
 	ErrMsg  string
-	RTime   miso.ETime `gorm:"column:rtime"`
+	RTime   util.ETime `gorm:"column:rtime"`
 }
 
 func SaveErrorLog(rail miso.Rail, evt LogLineEvent) error {
@@ -323,7 +327,7 @@ func SaveErrorLog(rail miso.Rail, evt LogLineEvent) error {
 		ErrMsg:  evt.Message,
 		RTime:   evt.Time,
 	}
-	err := miso.GetMySQL().
+	err := mysql.GetMySQL().
 		Table("error_log").
 		Create(&el).
 		Error
@@ -348,7 +352,7 @@ type ListedErrorLog struct {
 	TraceId string     `json:"traceId"`
 	SpanId  string     `json:"spanId"`
 	ErrMsg  string     `json:"errMsg"`
-	RTime   miso.ETime `json:"rtime" gorm:"column:rtime"`
+	RTime   util.ETime `json:"rtime" gorm:"column:rtime"`
 }
 
 type ListErrorLogReq struct {
@@ -362,7 +366,7 @@ type ListErrorLogResp struct {
 }
 
 func newListErrorLogsQry(rail miso.Rail, r ListErrorLogReq) *gorm.DB {
-	t := miso.GetMySQL().
+	t := mysql.GetMySQL().
 		Table("error_log")
 
 	if r.App != "" {
@@ -397,5 +401,5 @@ func ListErrorLogs(rail miso.Rail, r ListErrorLogReq) (ListErrorLogResp, error) 
 
 func RemoveErrorLogsBefore(rail miso.Rail, upperBound time.Time) error {
 	rail.Infof("Remove error logs before %s", upperBound)
-	return miso.GetMySQL().Exec("delete from error_log where rtime < ?", upperBound).Error
+	return mysql.GetMySQL().Exec("delete from error_log where rtime < ?", upperBound).Error
 }

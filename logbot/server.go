@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/curtisnewbie/miso/middleware/logbot"
+	"github.com/curtisnewbie/miso/middleware/rabbit"
+	"github.com/curtisnewbie/miso/middleware/task"
 	"github.com/curtisnewbie/miso/middleware/user-vault/auth"
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
@@ -22,7 +24,7 @@ func BeforeServerBootstrap(rail miso.Rail) error {
 		{Name: "Manage LogBot", Code: ResourceManageLogbot},
 	})
 
-	miso.SubEventBus(ErrorLogEventBus, 2,
+	rabbit.SubEventBus(ErrorLogEventBus, 2,
 		func(rail miso.Rail, l LogLineEvent) error {
 			return SaveErrorLog(rail, l)
 		})
@@ -35,7 +37,7 @@ func BeforeServerBootstrap(rail miso.Rail) error {
 		Resource(ResourceManageLogbot)
 
 	if IsRmErrorLogTaskEnabled() {
-		miso.ScheduleDistributedTask(miso.Job{
+		task.ScheduleDistributedTask(miso.Job{
 			Cron:            "0 0/1 * * ?",
 			CronWithSeconds: false,
 			Name:            "RemoveErrorLogTask",
